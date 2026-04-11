@@ -3,15 +3,20 @@ from django.utils import timezone
 
 
 @shared_task
-def run_batch_prediction(task_id):
+def run_batch_prediction(task_id, model_path, num_classes, is_large):
     from .models import PredictionTask
     from .services.predict import predict_batch
 
     task = PredictionTask.objects.get(id=task_id)
     task.status = 'running'
-    task.save()
+    task.save(update_fields=['status'])
     try:
-        results = predict_batch(task.input_data['pairs'], model_path=None)
+        results = predict_batch(
+            task.input_data['pairs'],
+            model_path=model_path,
+            num_classes=num_classes,
+            is_large=is_large,
+        )
         task.result = results
         task.status = 'completed'
         task.completed_at = timezone.now()
@@ -24,16 +29,17 @@ def run_batch_prediction(task_id):
 @shared_task
 def run_finetune(task_id):
     from .models import FinetuneTask
+    import time
 
     task = FinetuneTask.objects.get(id=task_id)
     task.status = 'running'
-    task.save()
+    task.save(update_fields=['status'])
     try:
-        import time
+        # TODO: integrate real finetune pipeline
         time.sleep(5)
         task.status = 'completed'
         task.completed_at = timezone.now()
-        task.log = 'MVP mock: finetune completed'
+        task.log = 'Finetune completed (mock)'
     except Exception as e:
         task.status = 'failed'
         task.log = str(e)

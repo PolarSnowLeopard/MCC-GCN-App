@@ -1,25 +1,79 @@
-import random
-import hashlib
+import logging
+import threading
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+from torch_geometric.data import Data
+
+from mcc_gcn.models.gcn import GCNNet
+from mcc_gcn.featurize.rdkit_coformer import RDKitCoformer
+from mcc_gcn.featurize.cocrystal import Cocrystal
+
+logger = logging.getLogger(__name__)
 
 CLASS_LABELS = {0: '无共晶', 1: '共晶 I 型', 2: '共晶 II 型', 3: '共晶 III 型'}
 
+_model_cache = {}
+_cache_lock = threading.Lock()
 
-def predict_single(api_smiles, coformer_smiles, model_path=None):
-    """MVP mock: deterministic based on input hash so same inputs give same results"""
-    seed = int(hashlib.md5(f"{api_smiles}:{coformer_smiles}".encode()).hexdigest()[:8], 16)
-    rng = random.Random(seed)
-    probs = [rng.random() for _ in range(4)]
-    total = sum(probs)
-    probs = [round(p / total, 4) for p in probs]
-    pred = probs.index(max(probs))
+
+def _load_model(model_path, num_classes=4, is_large=True):
+    with _cache_lock:
+        if model_path in _model_cache:
+            return _model_cache[model_path]
+        device = torch.device('cpu')
+        model = GCNNet(num_classes=num_classes, is_large=is_large).to(device)
+        state = torch.load(model_path, map_location=device, weights_only=True)
+        model.load_state_dict(state)
+        model.eval()
+        _model_cache[model_path] = model
+        logger.info("Loaded model %s (large=%s, classes=%d)", model_path, is_large, num_classes)
+        return model
+
+
+def _build_pyg_data(smiles1, smiles2):
+    c1 = RDKitCoformer(smiles1, input_type='smiles')
+    c2 = RDKitCoformer(smiles2, input_type='smiles')
+    cc = Cocrystal(c1, c2)
+    V = cc.VertexMatrix.feature_matrix()
+    A = cc.CCGraphTensor(t_type='OnlyCovalentBond', hbond=False, pipi_stack=False, contact=False)
+
+    x = torch.tensor(V, dtype=torch.float32)
+    A_t = torch.tensor(A, dtype=torch.float32)
+    edge_index = torch.nonzero(A_t.sum(1), as_tuple=False).t()
+    return Data(x=x, edge_index=edge_index)
+
+
+def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4, is_large=True):
+    model = _load_model(model_path, num_classes, is_large)
+    data = _build_pyg_data(api_smiles, coformer_smiles)
+
+    with torch.no_grad():
+        batch = torch.zeros(data.x.size(0), dtype=torch.long)
+        output = model(data.x, data.edge_index, batch)
+        probs = F.softmax(output, dim=1).cpu().numpy()[0]
+
+    pred = int(np.argmax(probs))
     return {
         'prediction': pred,
         'label': CLASS_LABELS[pred],
-        'probabilities': probs,
+        'probabilities': [round(float(p), 4) for p in probs],
         'api_smiles': api_smiles,
         'coformer_smiles': coformer_smiles,
     }
 
 
-def predict_batch(pairs, model_path=None):
-    return [predict_single(p['api_smiles'], p['coformer_smiles'], model_path) for p in pairs]
+def predict_batch(pairs, model_path=None, num_classes=4, is_large=True):
+    results = []
+    for p in pairs:
+        try:
+            r = predict_single(p['api_smiles'], p['coformer_smiles'], model_path, num_classes, is_large)
+        except Exception as e:
+            r = {
+                'api_smiles': p['api_smiles'],
+                'coformer_smiles': p['coformer_smiles'],
+                'error': str(e),
+            }
+        results.append(r)
+    return results

@@ -12,7 +12,7 @@ from .serializers import (
     FinetuneTaskSerializer,
     FinetuneCreateSerializer,
 )
-from .services.predict import predict_single as run_predict_single
+from .services.predict import predict_single as run_predict
 from .celery_tasks import run_batch_prediction, run_finetune
 
 
@@ -22,12 +22,22 @@ def predict_single(request):
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
 
-    model = MLModel.objects.get(id=data['model_id'])
-    result = run_predict_single(data['api_smiles'], data['coformer_smiles'])
+    model_obj = MLModel.objects.get(id=data['model_id'])
+
+    try:
+        result = run_predict(
+            data['api_smiles'],
+            data['coformer_smiles'],
+            model_path=model_obj.model_file.path,
+            num_classes=model_obj.num_classes,
+            is_large=model_obj.is_large,
+        )
+    except ValueError as e:
+        return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     task = PredictionTask.objects.create(
         user=request.user,
-        model=model,
+        model=model_obj,
         task_type='single',
         status='completed',
         input_data={'api_smiles': data['api_smiles'], 'coformer_smiles': data['coformer_smiles']},
@@ -46,15 +56,20 @@ def predict_batch(request):
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
 
-    model = MLModel.objects.get(id=data['model_id'])
+    model_obj = MLModel.objects.get(id=data['model_id'])
     task = PredictionTask.objects.create(
         user=request.user,
-        model=model,
+        model=model_obj,
         task_type='batch',
         status='pending',
         input_data={'pairs': data['pairs']},
     )
-    celery_result = run_batch_prediction.delay(task.id)
+    celery_result = run_batch_prediction.delay(
+        task.id,
+        model_obj.model_file.path,
+        model_obj.num_classes,
+        model_obj.is_large,
+    )
     task.celery_task_id = celery_result.id
     task.save(update_fields=['celery_task_id'])
 

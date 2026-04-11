@@ -21,6 +21,7 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH || '~/MCC-GCN-App' }}
             git pull origin main
             docker compose build
+            docker compose down --remove-orphans
             docker compose up -d
             docker compose exec -T backend python manage.py migrate --noinput
             docker image prune -f

@@ -22,6 +22,28 @@
             </el-select>
           </el-form-item>
 
+          <!-- Paper samples quick select -->
+          <div class="paper-panel">
+            <div class="paper-panel-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+              论文实验数据（64 对）
+            </div>
+            <div class="paper-row">
+              <div class="paper-field">
+                <span class="paper-label">API</span>
+                <el-select v-model="selectedApi" placeholder="选择 API" size="default" style="width:100%" @change="onPaperSelect">
+                  <el-option v-for="a in PAPER_APIS" :key="a.cas" :label="a.label" :value="a.cas" />
+                </el-select>
+              </div>
+              <div class="paper-field" style="flex:2">
+                <span class="paper-label">Coformer</span>
+                <el-select v-model="selectedCf" placeholder="选择 Coformer" size="default" style="width:100%" filterable @change="onPaperSelect">
+                  <el-option v-for="c in PAPER_COFORMERS" :key="c.cas" :label="c.label" :value="c.cas" />
+                </el-select>
+              </div>
+            </div>
+          </div>
+
           <!-- API molecule -->
           <div class="mol-section">
             <div class="mol-section-header">
@@ -29,13 +51,13 @@
               <el-segmented v-model="apiInputMode" :options="inputModes" size="small" />
             </div>
             <el-form-item v-if="apiInputMode === 'smiles'" prop="api_smiles">
-              <el-input v-model="form.api_smiles" placeholder="输入 SMILES，例如 Cn1c(=O)c2c(ncn2C)n(C)c1=O">
+              <el-input v-model="form.api_smiles" placeholder="输入 SMILES">
                 <template #prefix><span class="input-label">SMILES</span></template>
               </el-input>
             </el-form-item>
             <el-form-item v-else prop="api_smiles">
               <div class="name-search-row">
-                <el-input v-model="apiNameQuery" placeholder="输入分子名称或 CAS 号，例如 Caffeine 或 58-08-2" @keyup.enter="lookupSmiles('api')" clearable>
+                <el-input v-model="apiNameQuery" placeholder="输入分子名称或 CAS 号" @keyup.enter="lookupSmiles('api')" clearable>
                   <template #prefix><span class="input-label">名称</span></template>
                 </el-input>
                 <el-button type="primary" :loading="apiLookupLoading" @click="lookupSmiles('api')">查询</el-button>
@@ -45,12 +67,6 @@
                 <code>{{ form.api_smiles }}</code>
               </div>
             </el-form-item>
-            <div class="quick-picks">
-              <span class="quick-label">常用：</span>
-              <el-tag v-for="mol in COMMON_APIS" :key="mol.name" size="small" class="quick-tag" effect="plain" round @click="fillMol('api', mol)">
-                {{ mol.name }}
-              </el-tag>
-            </div>
           </div>
 
           <!-- Coformer molecule -->
@@ -60,13 +76,13 @@
               <el-segmented v-model="cfInputMode" :options="inputModes" size="small" />
             </div>
             <el-form-item v-if="cfInputMode === 'smiles'" prop="coformer_smiles">
-              <el-input v-model="form.coformer_smiles" placeholder="输入 SMILES，例如 OC(=O)CC(=O)O">
+              <el-input v-model="form.coformer_smiles" placeholder="输入 SMILES">
                 <template #prefix><span class="input-label">SMILES</span></template>
               </el-input>
             </el-form-item>
             <el-form-item v-else prop="coformer_smiles">
               <div class="name-search-row">
-                <el-input v-model="cfNameQuery" placeholder="输入分子名称或 CAS 号，例如 Glutaric acid 或 110-94-1" @keyup.enter="lookupSmiles('cf')" clearable>
+                <el-input v-model="cfNameQuery" placeholder="输入分子名称或 CAS 号" @keyup.enter="lookupSmiles('cf')" clearable>
                   <template #prefix><span class="input-label">名称</span></template>
                 </el-input>
                 <el-button type="primary" :loading="cfLookupLoading" @click="lookupSmiles('cf')">查询</el-button>
@@ -76,12 +92,6 @@
                 <code>{{ form.coformer_smiles }}</code>
               </div>
             </el-form-item>
-            <div class="quick-picks">
-              <span class="quick-label">常用：</span>
-              <el-tag v-for="mol in COMMON_COFORMERS" :key="mol.name" size="small" class="quick-tag" effect="plain" round @click="fillMol('cf', mol)">
-                {{ mol.name }}
-              </el-tag>
-            </div>
           </div>
 
           <el-button type="primary" :loading="predicting" @click="handlePredict" style="width:100%;height:44px;font-size:15px;margin-top:8px">
@@ -138,7 +148,7 @@
         </div>
         <p>输入分子信息后，预测结果将在此显示</p>
         <div class="sample-hint">
-          <el-button text type="primary" @click="fillSample">加载示例数据</el-button>
+          <el-button text type="primary" @click="fillSample">加载示例数据 (KPX + Salicylic acid)</el-button>
         </div>
       </div>
     </div>
@@ -168,6 +178,9 @@ const cfNameQuery = ref('')
 const apiLookupLoading = ref(false)
 const cfLookupLoading = ref(false)
 
+const selectedApi = ref('')
+const selectedCf = ref('')
+
 const form = reactive({ model_id: '', api_smiles: '', coformer_smiles: '' })
 const rules = {
   model_id: [{ required: true, message: '请选择模型', trigger: 'change' }],
@@ -178,21 +191,76 @@ const rules = {
 const CLASS_COLORS = ['#94a3b8', '#22c55e', '#f59e0b', '#ef4444']
 const CLASS_LABELS = ['无共晶', '共晶 I 型', '共晶 II 型', '共晶 III 型']
 
-const COMMON_APIS = [
-  { name: 'Caffeine', smiles: 'Cn1c(=O)c2c(ncn2C)n(C)c1=O' },
-  { name: 'Carbamazepine', smiles: 'c1ccc2c(c1)C(=Nc3ccccc3N2)C(=O)N' },  
-  { name: 'Ibuprofen', smiles: 'CC(C)Cc1ccc(cc1)C(C)C(=O)O' },
-  { name: 'Piroxicam', smiles: 'CN1C(=C(c2ccccc2S1(=O)=O)O)C(=O)Nc3ccccn3' },
+const PAPER_APIS = [
+  { cas: '74638-76-9', name: 'KPX', smiles: 'N=c1[nH]ccc(N)n1O', label: 'KPX (Kopexil) — 74638-76-9' },
+  { cas: '55921-65-8', name: 'KPR', smiles: 'N=c1[nH]c(N2CCCC2)cc(N)n1O', label: 'KPR (Kopyrrol) — 55921-65-8' },
 ]
 
-const COMMON_COFORMERS = [
-  { name: 'Glutaric acid', smiles: 'OC(=O)CCCC(=O)O' },
-  { name: 'Salicylic acid', smiles: 'OC(=O)c1ccccc1O' },
-  { name: 'Nicotinamide', smiles: 'NC(=O)c1cccnc1' },
-  { name: 'Saccharin', smiles: 'O=C1NS(=O)(=O)c2ccccc21' },
-  { name: 'Benzoic acid', smiles: 'OC(=O)c1ccccc1' },
-  { name: 'Oxalic acid', smiles: 'OC(=O)C(=O)O' },
+const PAPER_COFORMERS = [
+  { cas: '110-15-6', name: 'Succinic acid', smiles: 'O=C(O)CCC(=O)O', label: 'Succinic acid — 110-15-6' },
+  { cas: '110-17-8', name: 'Fumaric acid', smiles: 'O=C(O)/C=C/C(=O)O', label: 'Fumaric acid — 110-17-8' },
+  { cas: '124-04-9', name: 'Adipic acid', smiles: 'O=C(O)CCCCC(=O)O', label: 'Adipic acid — 124-04-9' },
+  { cas: '65-85-0', name: 'Benzoic acid', smiles: 'O=C(O)c1ccccc1', label: 'Benzoic acid — 65-85-0' },
+  { cas: '86-48-6', name: '1-Hydroxy-2-naphthoic acid', smiles: 'O=C(O)c1ccc2ccccc2c1O', label: '1-Hydroxy-2-naphthoic acid — 86-48-6' },
+  { cas: '99-96-7', name: '4-Hydroxybenzoic acid', smiles: 'O=C(O)c1ccc(O)cc1', label: '4-Hydroxybenzoic acid — 99-96-7' },
+  { cas: '150-13-0', name: '4-Aminobenzoic acid', smiles: 'Nc1ccc(C(=O)O)cc1', label: '4-Aminobenzoic acid — 150-13-0' },
+  { cas: '88-99-3', name: 'Phthalic acid', smiles: 'O=C(O)c1ccccc1C(=O)O', label: 'Phthalic acid — 88-99-3' },
+  { cas: '121-91-5', name: 'Isophthalic acid', smiles: 'O=C(O)c1cccc(C(=O)O)c1', label: 'Isophthalic acid — 121-91-5' },
+  { cas: '69-72-7', name: 'Salicylic acid', smiles: 'O=C(O)c1ccccc1O', label: 'Salicylic acid — 69-72-7' },
+  { cas: '10312-55-7', name: '2-Aminoterephthalic acid', smiles: 'Nc1cc(C(=O)O)ccc1C(=O)O', label: '2-Aminoterephthalic acid — 10312-55-7' },
+  { cas: '99-50-3', name: 'Protocatechuic acid', smiles: 'O=C(O)c1ccc(O)c(O)c1', label: 'Protocatechuic acid — 99-50-3' },
+  { cas: '100-21-0', name: 'Terephthalic acid', smiles: 'O=C(O)c1ccc(C(=O)O)cc1', label: 'Terephthalic acid — 100-21-0' },
+  { cas: '65-49-6', name: '4-Aminosalicylic acid', smiles: 'Nc1ccc(C(=O)O)c(O)c1', label: '4-Aminosalicylic acid — 65-49-6' },
+  { cas: '89-86-1', name: '2,4-Dihydroxybenzoic acid', smiles: 'O=C(O)c1ccc(O)cc1O', label: '2,4-Dihydroxybenzoic acid — 89-86-1' },
+  { cas: '87-69-4', name: 'Tartaric acid', smiles: 'O=C(O)C(O)C(O)C(=O)O', label: 'Tartaric acid — 87-69-4' },
+  { cas: '24280-93-1', name: 'Mycophenolic acid', smiles: 'COc1c(C)c2c(c(O)c1C/C=C(\\C)CCC(=O)O)C(=O)OC2', label: 'Mycophenolic acid — 24280-93-1' },
+  { cas: '144060-53-7', name: 'Febuxostat', smiles: 'Cc1nc(-c2ccc(OCC(C)C)c(C#N)c2)sc1C(=O)O', label: 'Febuxostat — 144060-53-7' },
+  { cas: '120-18-3', name: '2-Naphthalenesulfonic acid', smiles: 'O=S(=O)(O)c1ccc2ccccc2c1', label: '2-Naphthalenesulfonic acid — 120-18-3' },
+  { cas: '118-90-1', name: 'o-Toluic acid', smiles: 'Cc1ccccc1C(=O)O', label: 'o-Toluic acid — 118-90-1' },
+  { cas: '98-73-7', name: '4-tert-Butylbenzoic acid', smiles: 'CC(C)(C)c1ccc(C(=O)O)cc1', label: '4-tert-Butylbenzoic acid — 98-73-7' },
+  { cas: '51-36-5', name: '3,5-Dichlorobenzoic acid', smiles: 'O=C(O)c1cc(Cl)cc(Cl)c1', label: '3,5-Dichlorobenzoic acid — 51-36-5' },
+  { cas: '50-85-1', name: '4-Methylsalicylic acid', smiles: 'Cc1ccc(C(=O)O)c(O)c1', label: '4-Methylsalicylic acid — 50-85-1' },
+  { cas: '81-04-9', name: '1,5-Naphthalenedisulfonic acid', smiles: 'O=S(=O)(O)c1cccc2c(S(=O)(=O)O)cccc12', label: '1,5-Naphthalenedisulfonic acid — 81-04-9' },
+  { cas: '618-83-7', name: '5-Hydroxyisophthalic acid', smiles: 'O=C(O)c1cc(O)cc(C(=O)O)c1', label: '5-Hydroxyisophthalic acid — 618-83-7' },
+  { cas: '527-72-0', name: 'Thiophene-2-carboxylic acid', smiles: 'O=C(O)c1cccs1', label: 'Thiophene-2-carboxylic acid — 527-72-0' },
+  { cas: '156-38-7', name: '4-Hydroxyphenylacetic acid', smiles: 'O=C(O)Cc1ccc(O)cc1', label: '4-Hydroxyphenylacetic acid — 156-38-7' },
+  { cas: '51-44-5', name: '3,4-Dichlorobenzoic acid', smiles: 'O=C(O)c1ccc(Cl)c(Cl)c1', label: '3,4-Dichlorobenzoic acid — 51-44-5' },
+  { cas: '50-84-0', name: '2,4-Dichlorobenzoic acid', smiles: 'O=C(O)c1ccc(Cl)cc1Cl', label: '2,4-Dichlorobenzoic acid — 50-84-0' },
+  { cas: '1981-4-9', name: '1,5-Naphthalenedisulfonic acid (alt)', smiles: 'O=S(=O)(O)c1cccc2c(S(=O)(=O)O)cccc12', label: '1,5-Naphthalenedisulfonic acid — 1981-4-9' },
+  { cas: '491-11-2', name: '3-Chloro-4-nitrophenol', smiles: 'O=[N+]([O-])c1ccc(O)cc1Cl', label: '3-Chloro-4-nitrophenol — 491-11-2' },
+  { cas: '499-83-2', name: 'Dipicolinic acid', smiles: 'O=C(O)c1cccc(C(=O)O)n1', label: 'Dipicolinic acid — 499-83-2' },
 ]
+
+function onPaperSelect() {
+  if (selectedApi.value) {
+    const api = PAPER_APIS.find(a => a.cas === selectedApi.value)
+    if (api) {
+      form.api_smiles = api.smiles
+      apiInputMode.value = 'smiles'
+    }
+  }
+  if (selectedCf.value) {
+    const cf = PAPER_COFORMERS.find(c => c.cas === selectedCf.value)
+    if (cf) {
+      form.coformer_smiles = cf.smiles
+      cfInputMode.value = 'smiles'
+    }
+  }
+}
+
+function fillSample() {
+  selectedApi.value = '74638-76-9'
+  selectedCf.value = '69-72-7'
+  form.api_smiles = PAPER_APIS[0].smiles
+  form.coformer_smiles = PAPER_COFORMERS.find(c => c.cas === '69-72-7').smiles
+  apiInputMode.value = 'smiles'
+  cfInputMode.value = 'smiles'
+  if (models.value.length > 0 && !form.model_id) {
+    const ft = models.value.find(m => m.model_type === 'finetuned' && m.is_builtin)
+    form.model_id = ft ? ft.id : models.value[0].id
+  }
+  ElMessage.info('已加载示例：KPX + Salicylic acid')
+}
 
 async function lookupSmiles(target) {
   const query = target === 'api' ? apiNameQuery.value.trim() : cfNameQuery.value.trim()
@@ -213,30 +281,6 @@ async function lookupSmiles(target) {
   } finally {
     loadingRef.value = false
   }
-}
-
-function fillMol(target, mol) {
-  if (target === 'api') {
-    form.api_smiles = mol.smiles
-    apiNameQuery.value = mol.name
-    apiInputMode.value = 'smiles'
-  } else {
-    form.coformer_smiles = mol.smiles
-    cfNameQuery.value = mol.name
-    cfInputMode.value = 'smiles'
-  }
-}
-
-function fillSample() {
-  form.api_smiles = 'Cn1c(=O)c2c(ncn2C)n(C)c1=O'
-  form.coformer_smiles = 'OC(=O)CCCC(=O)O'
-  apiInputMode.value = 'smiles'
-  cfInputMode.value = 'smiles'
-  if (models.value.length > 0 && !form.model_id) {
-    const ft = models.value.find(m => m.model_type === 'finetuned' && m.is_builtin)
-    form.model_id = ft ? ft.id : models.value[0].id
-  }
-  ElMessage.info('已加载示例：Caffeine + Glutaric acid')
 }
 
 async function loadModels() {
@@ -264,6 +308,12 @@ onMounted(loadModels)
 <style scoped>
 .predict-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
+.paper-panel { margin-bottom: 16px; padding: 14px 16px; background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border-radius: 10px; border: 1px solid #dbeafe; }
+.paper-panel-title { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 10px; }
+.paper-row { display: flex; gap: 10px; }
+.paper-field { flex: 1; }
+.paper-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+
 .mol-section { margin-bottom: 8px; padding: 16px; background: #f8fafc; border-radius: 10px; border: 1px solid var(--border); }
 .mol-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .mol-section-label { font-size: 14px; font-weight: 600; color: var(--text-primary); }
@@ -275,11 +325,6 @@ onMounted(loadModels)
 .resolved-smiles { margin-top: 8px; padding: 8px 12px; background: #eff6ff; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
 .resolved-label { font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
 .resolved-smiles code { font-size: 12px; color: var(--text-secondary); word-break: break-all; }
-
-.quick-picks { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-.quick-label { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
-.quick-tag { cursor: pointer; transition: all .2s; }
-.quick-tag:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
 .result-hero { display: flex; align-items: center; gap: 24px; margin-bottom: 24px; }
 .result-class { flex: 1; padding: 20px; border-radius: 10px; text-align: center; }

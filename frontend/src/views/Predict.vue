@@ -192,8 +192,8 @@ const CLASS_COLORS = ['#94a3b8', '#22c55e', '#f59e0b', '#ef4444']
 const CLASS_LABELS = ['无共晶', '共晶 I 型', '共晶 II 型', '共晶 III 型']
 
 const PAPER_APIS = [
-  { cas: '74638-76-9', name: 'KPX', smiles: 'N=c1[nH]ccc(N)n1O', label: 'KPX (Kopexil) — 74638-76-9' },
-  { cas: '55921-65-8', name: 'KPR', smiles: 'N=c1[nH]c(N2CCCC2)cc(N)n1O', label: 'KPR (Kopyrrol) — 55921-65-8' },
+  { cas: '74638-76-9', name: 'KPX', smiles: 'Nc1ccnc(N)[n+]1[O-]', label: 'KPX (Kopexil) — 74638-76-9' },
+  { cas: '55921-65-8', name: 'KPR', smiles: 'Nc1cc(N2CCCC2)nc(N)[n+]1[O-]', label: 'KPR (Kopyrrol) — 55921-65-8' },
 ]
 
 const PAPER_COFORMERS = [

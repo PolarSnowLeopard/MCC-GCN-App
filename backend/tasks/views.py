@@ -30,7 +30,6 @@ def predict_single(request):
             data['coformer_smiles'],
             model_path=model_obj.model_file.path,
             num_classes=model_obj.num_classes,
-            is_large=model_obj.is_large,
         )
     except ValueError as e:
         return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -68,7 +67,6 @@ def predict_batch(request):
         task.id,
         model_obj.model_file.path,
         model_obj.num_classes,
-        model_obj.is_large,
     )
     task.celery_task_id = celery_result.id
     task.save(update_fields=['celery_task_id'])

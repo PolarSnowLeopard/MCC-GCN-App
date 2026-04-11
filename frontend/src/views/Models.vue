@@ -31,8 +31,11 @@
         </div>
         <div class="model-desc" v-if="m.description">{{ m.description }}</div>
         <div class="model-footer">
-          <span class="model-date">{{ formatDate(m.created_at) }}</span>
-          <el-popconfirm title="确定删除此模型？" @confirm="handleDelete(m.id)">
+          <span class="model-date">
+            <el-tag v-if="m.is_builtin" size="small" type="info" style="margin-right:6px">内置</el-tag>
+            {{ formatDate(m.created_at) }}
+          </span>
+          <el-popconfirm v-if="!m.is_builtin" title="确定删除此模型？" @confirm="handleDelete(m.id)">
             <template #reference>
               <el-button type="danger" size="small" text>删除</el-button>
             </template>
@@ -60,9 +63,6 @@
             <el-input-number v-model="uploadForm.num_classes" :min="2" :max="10" style="width:100%" />
           </el-form-item>
         </div>
-        <el-form-item label="Large 模型">
-          <el-switch v-model="uploadForm.is_large" active-text="是" inactive-text="否" />
-        </el-form-item>
         <el-form-item label="模型文件" prop="model_file">
           <el-upload :auto-upload="false" :limit="1" :on-change="f => uploadForm.model_file = f.raw" :on-remove="() => uploadForm.model_file = null" drag>
             <div style="padding:16px 0">
@@ -89,7 +89,7 @@ const models = ref([])
 const dialogVisible = ref(false)
 const uploading = ref(false)
 const uploadFormRef = ref()
-const uploadForm = reactive({ name: '', description: '', model_type: '', num_classes: 4, is_large: true, model_file: null })
+const uploadForm = reactive({ name: '', description: '', model_type: '', num_classes: 4, model_file: null })
 const uploadRules = {
   name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
   model_type: [{ required: true, message: '请选择类型', trigger: 'change' }],
@@ -112,7 +112,7 @@ async function handleUpload() {
 }
 
 async function handleDelete(id) { try { await modelApi.delete(id); ElMessage.success('已删除'); loadModels() } catch { ElMessage.error('删除失败') } }
-function resetForm() { Object.assign(uploadForm, { name: '', description: '', model_type: '', num_classes: 4, is_large: true, model_file: null }) }
+function resetForm() { Object.assign(uploadForm, { name: '', description: '', model_type: '', num_classes: 4, model_file: null }) }
 
 onMounted(loadModels)
 </script>

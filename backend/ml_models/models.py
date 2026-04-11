@@ -7,13 +7,19 @@ class MLModel(models.Model):
         ('pretrained', '预训练模型'),
         ('finetuned', '微调模型'),
     ]
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='models')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='models', null=True, blank=True,
+    )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     model_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
-    base_model = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='derived_models')
+    base_model = models.ForeignKey(
+        'self', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='derived_models',
+    )
     model_file = models.FileField(upload_to='models/')
-    is_large = models.BooleanField(default=True)
+    is_builtin = models.BooleanField(default=False)
     num_classes = models.IntegerField(default=4)
     created_at = models.DateTimeField(auto_now_add=True)
 

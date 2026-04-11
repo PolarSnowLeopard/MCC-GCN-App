@@ -3,7 +3,7 @@ from django.utils import timezone
 
 
 @shared_task
-def run_batch_prediction(task_id, model_path, num_classes, is_large):
+def run_batch_prediction(task_id, model_path, num_classes):
     from .models import PredictionTask
     from .services.predict import predict_batch
 
@@ -15,7 +15,6 @@ def run_batch_prediction(task_id, model_path, num_classes, is_large):
             task.input_data['pairs'],
             model_path=model_path,
             num_classes=num_classes,
-            is_large=is_large,
         )
         task.result = results
         task.status = 'completed'

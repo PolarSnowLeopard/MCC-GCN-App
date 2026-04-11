@@ -18,17 +18,17 @@ _model_cache = {}
 _cache_lock = threading.Lock()
 
 
-def _load_model(model_path, num_classes=4, is_large=True):
+def _load_model(model_path, num_classes=4):
     with _cache_lock:
         if model_path in _model_cache:
             return _model_cache[model_path]
         device = torch.device('cpu')
-        model = GCNNet(num_classes=num_classes, is_large=is_large).to(device)
+        model = GCNNet(num_classes=num_classes).to(device)
         state = torch.load(model_path, map_location=device, weights_only=True)
         model.load_state_dict(state)
         model.eval()
         _model_cache[model_path] = model
-        logger.info("Loaded model %s (large=%s, classes=%d)", model_path, is_large, num_classes)
+        logger.info("Loaded model %s (classes=%d)", model_path, num_classes)
         return model
 
 
@@ -45,8 +45,8 @@ def _build_pyg_data(smiles1, smiles2):
     return Data(x=x, edge_index=edge_index)
 
 
-def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4, is_large=True):
-    model = _load_model(model_path, num_classes, is_large)
+def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4):
+    model = _load_model(model_path, num_classes)
     data = _build_pyg_data(api_smiles, coformer_smiles)
 
     with torch.no_grad():
@@ -64,11 +64,11 @@ def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4, 
     }
 
 
-def predict_batch(pairs, model_path=None, num_classes=4, is_large=True):
+def predict_batch(pairs, model_path=None, num_classes=4):
     results = []
     for p in pairs:
         try:
-            r = predict_single(p['api_smiles'], p['coformer_smiles'], model_path, num_classes, is_large)
+            r = predict_single(p['api_smiles'], p['coformer_smiles'], model_path, num_classes)
         except Exception as e:
             r = {
                 'api_smiles': p['api_smiles'],

@@ -25,4 +25,5 @@ jobs:
             docker compose down --remove-orphans
             docker compose up -d
             docker compose exec -T backend python manage.py migrate --noinput
+            docker compose exec -T backend python manage.py seed_builtin_model
             docker image prune -f

@@ -45,7 +45,7 @@
         <el-table-column label="预测" width="120" align="center">
           <template #default="{ row }">
             <el-tag :color="CLASS_COLORS[row.prediction]" style="color:#fff;border:none" size="small" round>
-              Class {{ row.prediction }}
+              {{ CLASS_LABELS[row.prediction] }}
             </el-tag>
           </template>
         </el-table-column>
@@ -72,7 +72,8 @@ const submitting = ref(false)
 const results = ref([])
 const form = reactive({ model_id: '', pairsText: '' })
 const rules = { model_id: [{ required: true, message: '请选择模型', trigger: 'change' }] }
-const CLASS_COLORS = ['#94a3b8', '#22c55e', '#f59e0b', '#ef4444']
+const CLASS_COLORS = ['#94a3b8', '#f59e0b', '#22c55e', '#3b82f6']
+const CLASS_LABELS = ['Negative', 'Salt', 'Cocrystal', 'Hydrate/Solvate']
 
 function parsePairsFromText(text) {
   return text.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
@@ -104,8 +105,8 @@ async function handleSubmit() {
 }
 
 function exportCSV() {
-  const header = 'API SMILES,Coformer SMILES,Prediction,Confidence'
-  const rows = results.value.map(r => `"${r.api_smiles}","${r.coformer_smiles}",${r.prediction},${r.probabilities ? (Math.max(...r.probabilities)*100).toFixed(1)+'%' : ''}`)
+  const header = 'API SMILES,Coformer SMILES,Prediction,Label,Confidence'
+  const rows = results.value.map(r => `"${r.api_smiles}","${r.coformer_smiles}",${r.prediction},${CLASS_LABELS[r.prediction]},${r.probabilities ? (Math.max(...r.probabilities)*100).toFixed(1)+'%' : ''}`)
   const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'batch_results.csv'; a.click()
 }

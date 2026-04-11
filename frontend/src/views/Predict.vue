@@ -188,8 +188,8 @@ const rules = {
   coformer_smiles: [{ required: true, message: '请输入或查询辅料 SMILES', trigger: 'blur' }],
 }
 
-const CLASS_COLORS = ['#94a3b8', '#22c55e', '#f59e0b', '#ef4444']
-const CLASS_LABELS = ['无共晶', '共晶 I 型', '共晶 II 型', '共晶 III 型']
+const CLASS_COLORS = ['#94a3b8', '#f59e0b', '#22c55e', '#3b82f6']
+const CLASS_LABELS = ['Negative', 'Salt', 'Cocrystal', 'Hydrate/Solvate']
 
 const PAPER_APIS = [
   { cas: '74638-76-9', name: 'KPX', smiles: 'Nc1ccnc(N)[n+]1[O-]', label: 'KPX (Kopexil) — 74638-76-9' },

@@ -12,7 +12,7 @@ from mcc_gcn.featurize.cocrystal import Cocrystal
 
 logger = logging.getLogger(__name__)
 
-CLASS_LABELS = {0: '无共晶', 1: '共晶 I 型', 2: '共晶 II 型', 3: '共晶 III 型'}
+CLASS_LABELS = {0: 'Negative', 1: 'Salt', 2: 'Cocrystal', 3: 'Hydrate/Solvate'}
 
 _model_cache = {}
 _cache_lock = threading.Lock()

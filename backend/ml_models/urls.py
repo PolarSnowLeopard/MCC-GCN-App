@@ -1,3 +1,7 @@
-from django.urls import path
+from rest_framework.routers import DefaultRouter
+from .views import MLModelViewSet
 
-urlpatterns = []
+router = DefaultRouter()
+router.register('', MLModelViewSet, basename='mlmodel')
+
+urlpatterns = router.urls

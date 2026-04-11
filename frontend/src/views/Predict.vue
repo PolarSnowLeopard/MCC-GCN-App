@@ -226,7 +226,7 @@ const PAPER_COFORMERS = [
   { cas: '156-38-7', name: '4-Hydroxyphenylacetic acid', smiles: 'O=C(O)Cc1ccc(O)cc1', label: '4-Hydroxyphenylacetic acid — 156-38-7' },
   { cas: '51-44-5', name: '3,4-Dichlorobenzoic acid', smiles: 'O=C(O)c1ccc(Cl)c(Cl)c1', label: '3,4-Dichlorobenzoic acid — 51-44-5' },
   { cas: '50-84-0', name: '2,4-Dichlorobenzoic acid', smiles: 'O=C(O)c1ccc(Cl)cc1Cl', label: '2,4-Dichlorobenzoic acid — 50-84-0' },
-  { cas: '1981-4-9', name: '1,5-Naphthalenedisulfonic acid (alt)', smiles: 'O=S(=O)(O)c1cccc2c(S(=O)(=O)O)cccc12', label: '1,5-Naphthalenedisulfonic acid — 1981-4-9' },
+  { cas: '303-07-1', name: '2,6-Dihydroxybenzoic acid', smiles: 'O=C(O)c1c(O)cccc1O', label: '2,6-Dihydroxybenzoic acid — 303-07-1' },
   { cas: '491-11-2', name: '3-Chloro-4-nitrophenol', smiles: 'O=[N+]([O-])c1ccc(O)cc1Cl', label: '3-Chloro-4-nitrophenol — 491-11-2' },
   { cas: '499-83-2', name: 'Dipicolinic acid', smiles: 'O=C(O)c1cccc(C(=O)O)n1', label: 'Dipicolinic acid — 499-83-2' },
 ]

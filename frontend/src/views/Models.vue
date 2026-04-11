@@ -29,7 +29,7 @@
             <div class="model-meta">{{ m.model_type === 'pretrained' ? '预训练模型' : '微调模型' }} · {{ m.num_classes }} 类</div>
           </div>
         </div>
-        <div class="model-desc" v-if="m.description">{{ m.description }}</div>
+        <div class="model-desc">{{ m.description || '' }}</div>
         <div class="model-footer">
           <span class="model-date">
             <el-tag v-if="m.is_builtin" size="small" type="info" style="margin-right:6px">内置</el-tag>
@@ -118,16 +118,16 @@ onMounted(loadModels)
 </script>
 
 <style scoped>
-.model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.model-card { display: flex; flex-direction: column; }
+.model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: stretch; }
+.model-card { display: flex; flex-direction: column; min-height: 180px; }
 .model-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .model-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
 .model-icon.pre { background: #eff6ff; color: #3b82f6; }
 .model-icon.ft { background: #f0fdf4; color: #22c55e; }
 .model-name { font-weight: 600; font-size: 15px; color: var(--text-primary); }
 .model-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.model-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+.model-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; flex: 1; }
 .model-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto; }
-.model-date { font-size: 12px; color: var(--text-muted); }
+.model-date { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; }
 </style>

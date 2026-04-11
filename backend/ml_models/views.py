@@ -11,7 +11,7 @@ class MLModelViewSet(ModelViewSet):
 
     def get_queryset(self):
         return MLModel.objects.filter(
-            Q(user=self.request.user) | Q(model_type='pretrained')
+            Q(user=self.request.user) | Q(is_builtin=True)
         )
 
     def perform_create(self, serializer):

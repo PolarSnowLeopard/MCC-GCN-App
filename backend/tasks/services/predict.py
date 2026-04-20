@@ -12,7 +12,7 @@ from mcc_gcn.featurize.cocrystal import Cocrystal
 
 logger = logging.getLogger(__name__)
 
-CLASS_LABELS = {0: 'Negative', 1: 'Salt', 2: 'Cocrystal', 3: 'Hydrate/Solvate'}
+CLASS_LABELS = {0: 'Negative', 1: 'Salt', 2: 'Cocrystal', 3: 'Solvate'}
 
 _model_cache = {}
 _cache_lock = threading.Lock()
@@ -45,14 +45,23 @@ def _build_pyg_data(smiles1, smiles2):
     return Data(x=x, edge_index=edge_index)
 
 
-def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4):
-    model = _load_model(model_path, num_classes)
-    data = _build_pyg_data(api_smiles, coformer_smiles)
-
+def _infer_single_direction(model, data):
+    """Run inference on a single PyG Data object, return probability vector."""
     with torch.no_grad():
         batch = torch.zeros(data.x.size(0), dtype=torch.long)
         output = model(data.x, data.edge_index, batch)
-        probs = F.softmax(output, dim=1).cpu().numpy()[0]
+        return F.softmax(output, dim=1).cpu().numpy()[0]
+
+
+def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4):
+    model = _load_model(model_path, num_classes)
+
+    data_ab = _build_pyg_data(api_smiles, coformer_smiles)
+    data_ba = _build_pyg_data(coformer_smiles, api_smiles)
+
+    probs_ab = _infer_single_direction(model, data_ab)
+    probs_ba = _infer_single_direction(model, data_ba)
+    probs = np.average([probs_ab, probs_ba], axis=0)
 
     pred = int(np.argmax(probs))
     return {

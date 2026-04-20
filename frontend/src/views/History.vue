@@ -1,53 +1,53 @@
 <template>
   <div>
     <div class="page-header">
-      <h1 class="page-title">历史记录</h1>
-      <p class="page-desc">查看所有预测和微调任务的执行记录</p>
+      <h1 class="page-title">{{ $t('history.title') }}</h1>
+      <p class="page-desc">{{ $t('history.desc') }}</p>
     </div>
 
     <div class="content-card">
       <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-        <el-tab-pane label="预测任务" name="predict">
+        <el-tab-pane :label="$t('history.predictTab')" name="predict">
           <el-table :data="predictTasks" v-loading="loading" stripe style="width: 100%">
             <el-table-column prop="id" label="ID" width="70" />
-            <el-table-column label="类型" width="90" align="center">
+            <el-table-column :label="$t('history.type')" width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="row.task_type === 'single' ? '' : 'warning'" size="small" round>
-                  {{ row.task_type === 'single' ? '单次' : '批量' }}
+                  {{ row.task_type === 'single' ? $t('history.typeSingle') : $t('history.typeBatch') }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="状态" width="90" align="center">
+            <el-table-column :label="$t('history.statusCol')" width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="statusType(row.status)" size="small" round>{{ statusLabel(row.status) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="创建时间" width="180">
+            <el-table-column :label="$t('history.createdAt')" width="180">
               <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
             </el-table-column>
             <el-table-column label="" width="100" align="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" text @click="showDetail(row)">详情</el-button>
+                <el-button type="primary" size="small" text @click="showDetail(row)">{{ $t('common.detail') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
         </el-tab-pane>
 
-        <el-tab-pane label="微调任务" name="finetune">
+        <el-tab-pane :label="$t('history.finetuneTab')" name="finetune">
           <el-table :data="finetuneTasks" v-loading="loading" stripe style="width: 100%">
             <el-table-column prop="id" label="ID" width="70" />
-            <el-table-column prop="name" label="任务名称" min-width="160" />
-            <el-table-column label="状态" width="90" align="center">
+            <el-table-column prop="name" :label="$t('history.taskName')" min-width="160" />
+            <el-table-column :label="$t('history.statusCol')" width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="statusType(row.status)" size="small" round>{{ statusLabel(row.status) }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="创建时间" width="180">
+            <el-table-column :label="$t('history.createdAt')" width="180">
               <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
             </el-table-column>
             <el-table-column label="" width="100" align="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" text @click="showFinetuneDetail(row)">详情</el-button>
+                <el-button type="primary" size="small" text @click="showFinetuneDetail(row)">{{ $t('common.detail') }}</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -55,13 +55,13 @@
       </el-tabs>
     </div>
 
-    <el-dialog v-model="detailVisible" title="预测任务详情" width="600px" :close-on-click-modal="true">
+    <el-dialog v-model="detailVisible" :title="$t('history.predictDetail')" width="600px" :close-on-click-modal="true">
       <template v-if="detailData">
         <div class="detail-grid">
-          <div class="detail-item"><span class="detail-label">任务 ID</span><span>{{ detailData.id }}</span></div>
-          <div class="detail-item"><span class="detail-label">类型</span><span>{{ detailData.task_type === 'single' ? '单次预测' : '批量预测' }}</span></div>
-          <div class="detail-item"><span class="detail-label">状态</span><el-tag :type="statusType(detailData.status)" size="small" round>{{ statusLabel(detailData.status) }}</el-tag></div>
-          <div class="detail-item"><span class="detail-label">时间</span><span>{{ formatDate(detailData.created_at) }}</span></div>
+          <div class="detail-item"><span class="detail-label">{{ $t('history.taskId') }}</span><span>{{ detailData.id }}</span></div>
+          <div class="detail-item"><span class="detail-label">{{ $t('history.type') }}</span><span>{{ detailData.task_type === 'single' ? $t('history.singlePredict') : $t('history.batchPredict') }}</span></div>
+          <div class="detail-item"><span class="detail-label">{{ $t('history.statusCol') }}</span><el-tag :type="statusType(detailData.status)" size="small" round>{{ statusLabel(detailData.status) }}</el-tag></div>
+          <div class="detail-item"><span class="detail-label">{{ $t('history.time') }}</span><span>{{ formatDate(detailData.created_at) }}</span></div>
         </div>
         <template v-if="detailData.result && detailData.task_type === 'single'">
           <div class="detail-result">
@@ -82,7 +82,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="finetuneDetailVisible" title="微调任务详情" width="500px">
+    <el-dialog v-model="finetuneDetailVisible" :title="$t('history.finetuneDetail')" width="500px">
       <template v-if="finetuneDetailData">
         <div class="detail-grid">
           <div class="detail-item" v-for="(val, key) in finetuneDetailData" :key="key">
@@ -97,9 +97,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { taskApi } from '../api'
+
+const { t, locale } = useI18n()
 
 const activeTab = ref('predict')
 const loading = ref(false)
@@ -110,17 +113,22 @@ const detailData = ref(null)
 const finetuneDetailVisible = ref(false)
 const finetuneDetailData = ref(null)
 
-const STATUS_MAP = { pending: { type: 'info', label: '等待中' }, running: { type: 'warning', label: '运行中' }, completed: { type: 'success', label: '已完成' }, failed: { type: 'danger', label: '失败' } }
-const CLASS_COLORS = ['#94a3b8', '#22c55e', '#f59e0b', '#ef4444']
-function statusType(s) { return STATUS_MAP[s]?.type || 'info' }
-function statusLabel(s) { return STATUS_MAP[s]?.label || s }
-function formatDate(s) { return s ? new Date(s).toLocaleString('zh-CN') : '-' }
+const STATUS_MAP = computed(() => ({
+  pending: { type: 'info', label: t('status.pending') },
+  running: { type: 'warning', label: t('status.running') },
+  completed: { type: 'success', label: t('status.completed') },
+  failed: { type: 'danger', label: t('status.failed') },
+}))
+const CLASS_COLORS = ['#94a3b8', '#f59e0b', '#22c55e', '#3b82f6']
+function statusType(s) { return STATUS_MAP.value[s]?.type || 'info' }
+function statusLabel(s) { return STATUS_MAP.value[s]?.label || s }
+function formatDate(s) { return s ? new Date(s).toLocaleString(locale.value) : '-' }
 
-async function loadPredictTasks() { loading.value = true; try { const { data } = await taskApi.list(); predictTasks.value = data.results || data } catch { ElMessage.error('加载失败') } finally { loading.value = false } }
-async function loadFinetuneTasks() { loading.value = true; try { const { data } = await taskApi.finetuneList(); finetuneTasks.value = data.results || data } catch { ElMessage.error('加载失败') } finally { loading.value = false } }
+async function loadPredictTasks() { loading.value = true; try { const { data } = await taskApi.list(); predictTasks.value = data.results || data } catch { ElMessage.error(t('history.loadFailed')) } finally { loading.value = false } }
+async function loadFinetuneTasks() { loading.value = true; try { const { data } = await taskApi.finetuneList(); finetuneTasks.value = data.results || data } catch { ElMessage.error(t('history.loadFailed')) } finally { loading.value = false } }
 function handleTabChange(tab) { tab === 'predict' ? loadPredictTasks() : loadFinetuneTasks() }
-async function showDetail(row) { try { const { data } = await taskApi.detail(row.id); detailData.value = data; detailVisible.value = true } catch { ElMessage.error('获取详情失败') } }
-async function showFinetuneDetail(row) { try { const { data } = await taskApi.finetuneDetail(row.id); finetuneDetailData.value = data; finetuneDetailVisible.value = true } catch { ElMessage.error('获取详情失败') } }
+async function showDetail(row) { try { const { data } = await taskApi.detail(row.id); detailData.value = data; detailVisible.value = true } catch { ElMessage.error(t('history.detailFailed')) } }
+async function showFinetuneDetail(row) { try { const { data } = await taskApi.finetuneDetail(row.id); finetuneDetailData.value = data; finetuneDetailVisible.value = true } catch { ElMessage.error(t('history.detailFailed')) } }
 
 onMounted(loadPredictTasks)
 </script>

@@ -9,35 +9,35 @@
           <h1>MCC-GCN</h1>
           <p>Multi-Component Crystal<br/>Graph Convolutional Network</p>
           <div class="tagline-divider"></div>
-          <span>共晶形成预测与筛选平台</span>
+          <span>{{ $t('auth.platformSlogan') }}</span>
         </div>
       </div>
     </div>
     <div class="auth-right">
       <div class="auth-form-wrap">
         <div class="auth-form-header">
-          <h2>创建账号</h2>
-          <p>注册以开始使用预测平台</p>
+          <h2>{{ $t('auth.createAccount') }}</h2>
+          <p>{{ $t('auth.registerSubtitle') }}</p>
         </div>
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleRegister" size="large">
-          <el-form-item label="用户名" prop="username">
-            <el-input v-model="form.username" placeholder="请输入用户名" />
+          <el-form-item :label="$t('auth.username')" prop="username">
+            <el-input v-model="form.username" :placeholder="$t('auth.usernamePlaceholder')" />
           </el-form-item>
-          <el-form-item label="邮箱" prop="email">
-            <el-input v-model="form.email" placeholder="请输入邮箱" />
+          <el-form-item :label="$t('auth.email')" prop="email">
+            <el-input v-model="form.email" :placeholder="$t('auth.emailPlaceholder')" />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+          <el-form-item :label="$t('auth.password')" prop="password">
+            <el-input v-model="form.password" type="password" :placeholder="$t('auth.passwordPlaceholder')" show-password />
           </el-form-item>
-          <el-form-item label="确认密码" prop="confirmPassword">
-            <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" show-password />
+          <el-form-item :label="$t('auth.confirmPassword')" prop="confirmPassword">
+            <el-input v-model="form.confirmPassword" type="password" :placeholder="$t('auth.confirmPasswordPlaceholder')" show-password />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" native-type="submit" :loading="loading" class="auth-btn">注 册</el-button>
+            <el-button type="primary" native-type="submit" :loading="loading" class="auth-btn">{{ $t('auth.register') }}</el-button>
           </el-form-item>
         </el-form>
         <div class="auth-switch">
-          已有账号？<router-link to="/login">返回登录</router-link>
+          {{ $t('auth.hasAccount') }}<router-link to="/login">{{ $t('auth.goLogin') }}</router-link>
         </div>
       </div>
     </div>
@@ -45,11 +45,13 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref()
@@ -57,16 +59,25 @@ const loading = ref(false)
 const form = reactive({ username: '', email: '', password: '', confirmPassword: '' })
 
 const validateConfirm = (rule, value, callback) => {
-  if (value !== form.password) callback(new Error('两次输入的密码不一致'))
+  if (value !== form.password) callback(new Error(t('auth.passwordMismatch')))
   else callback()
 }
 
-const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }, { type: 'email', message: '请输入有效的邮箱', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }, { min: 6, message: '密码不少于6位', trigger: 'blur' }],
-  confirmPassword: [{ required: true, message: '请再次输入密码', trigger: 'blur' }, { validator: validateConfirm, trigger: 'blur' }],
-}
+const rules = computed(() => ({
+  username: [{ required: true, message: t('auth.usernameRequired'), trigger: 'blur' }],
+  email: [
+    { required: true, message: t('auth.emailRequired'), trigger: 'blur' },
+    { type: 'email', message: t('auth.emailInvalid'), trigger: 'blur' },
+  ],
+  password: [
+    { required: true, message: t('auth.passwordRequired'), trigger: 'blur' },
+    { min: 6, message: t('auth.passwordMin'), trigger: 'blur' },
+  ],
+  confirmPassword: [
+    { required: true, message: t('auth.confirmRequired'), trigger: 'blur' },
+    { validator: validateConfirm, trigger: 'blur' },
+  ],
+}))
 
 function dotStyle(i) {
   const r = () => Math.random()
@@ -79,11 +90,11 @@ async function handleRegister() {
   loading.value = true
   try {
     await userStore.register({ username: form.username, email: form.email, password: form.password })
-    ElMessage.success('注册成功')
+    ElMessage.success(t('auth.registerSuccess'))
     router.push('/')
   } catch (e) {
     const data = e.response?.data
-    ElMessage.error(data?.detail || data?.username?.[0] || data?.email?.[0] || '注册失败')
+    ElMessage.error(data?.detail || data?.username?.[0] || data?.email?.[0] || t('auth.registerFailed'))
   } finally {
     loading.value = false
   }

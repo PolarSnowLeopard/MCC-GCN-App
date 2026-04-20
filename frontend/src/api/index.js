@@ -37,6 +37,7 @@ export const modelApi = {
   list: () => api.get('/models/'),
   create: (formData) => api.post('/models/', formData),
   delete: (id) => api.delete(`/models/${id}/`),
+  publish: (id) => api.post(`/models/${id}/publish/`),
 }
 
 export const taskApi = {

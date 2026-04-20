@@ -31,8 +31,13 @@ def predict_single(request):
             model_path=model_obj.model_file.path,
             num_classes=model_obj.num_classes,
         )
-    except ValueError as e:
+    except (ValueError, TypeError, RuntimeError) as e:
         return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response(
+            {'detail': f'Prediction error: {e}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     task = PredictionTask.objects.create(
         user=request.user,

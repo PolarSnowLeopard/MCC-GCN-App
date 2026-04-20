@@ -373,6 +373,7 @@ onBeforeUnmount(stopPolling)
 
 <style scoped>
 .ft-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.ft-grid > .content-card { margin-top: 0; }
 
 .input-hint {
   display: flex; gap: 10px; padding: 14px 16px; border-radius: 8px;

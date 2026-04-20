@@ -165,6 +165,10 @@ onMounted(loadModels)
 
 <style scoped>
 .model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: stretch; }
+/* Override the global `.content-card + .content-card { margin-top: 20px }` rule,
+   which would otherwise push all but the first grid item down by 20px and
+   break stretch-based row alignment. */
+.model-grid .model-card { margin-top: 0; align-self: stretch; }
 .model-card { display: flex; flex-direction: column; min-height: 180px; transition: border-color .2s; }
 .model-card.draft-card { border: 1px dashed #f59e0b; background: #fffdf5; }
 .model-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }

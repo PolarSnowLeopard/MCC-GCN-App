@@ -73,7 +73,7 @@ def run_finetune(task_id):
         task.status = 'completed'
         task.completed_at = timezone.now()
         task.log = result['log']
-    except Exception as e:
+    except Exception:
         import traceback
         task.status = 'failed'
         task.log = traceback.format_exc()

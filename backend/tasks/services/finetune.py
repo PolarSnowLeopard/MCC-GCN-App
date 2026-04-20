@@ -1,7 +1,5 @@
 import csv
 import logging
-import os
-import tempfile
 
 import numpy as np
 import torch

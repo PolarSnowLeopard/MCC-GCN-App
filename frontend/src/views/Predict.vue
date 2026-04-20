@@ -356,6 +356,7 @@ onMounted(loadModels)
 
 <style scoped>
 .predict-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+.predict-grid > .content-card { margin-top: 0; }
 
 .main-tabs :deep(.el-tabs__header) { margin-bottom: 20px; }
 .main-tabs :deep(.el-tabs__item) { font-size: 15px; font-weight: 600; }

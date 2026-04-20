@@ -9,29 +9,29 @@
           <h1>MCC-GCN</h1>
           <p>Multi-Component Crystal<br/>Graph Convolutional Network</p>
           <div class="tagline-divider"></div>
-          <span>共晶形成预测与筛选平台</span>
+          <span>{{ $t('auth.platformSlogan') }}</span>
         </div>
       </div>
     </div>
     <div class="auth-right">
       <div class="auth-form-wrap">
         <div class="auth-form-header">
-          <h2>欢迎回来</h2>
-          <p>登录以继续使用平台</p>
+          <h2>{{ $t('auth.welcomeBack') }}</h2>
+          <p>{{ $t('auth.loginSubtitle') }}</p>
         </div>
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleLogin" size="large">
-          <el-form-item label="用户名" prop="username">
-            <el-input v-model="form.username" placeholder="请输入用户名" />
+          <el-form-item :label="$t('auth.username')" prop="username">
+            <el-input v-model="form.username" :placeholder="$t('auth.usernamePlaceholder')" />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
+          <el-form-item :label="$t('auth.password')" prop="password">
+            <el-input v-model="form.password" type="password" :placeholder="$t('auth.passwordPlaceholder')" show-password />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" native-type="submit" :loading="loading" class="auth-btn">登 录</el-button>
+            <el-button type="primary" native-type="submit" :loading="loading" class="auth-btn">{{ $t('auth.login') }}</el-button>
           </el-form-item>
         </el-form>
         <div class="auth-switch">
-          还没有账号？<router-link to="/register">注册账号</router-link>
+          {{ $t('auth.noAccount') }}<router-link to="/register">{{ $t('auth.goRegister') }}</router-link>
         </div>
       </div>
     </div>
@@ -39,20 +39,22 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref()
 const loading = ref(false)
 const form = reactive({ username: '', password: '' })
-const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-}
+const rules = computed(() => ({
+  username: [{ required: true, message: t('auth.usernameRequired'), trigger: 'blur' }],
+  password: [{ required: true, message: t('auth.passwordRequired'), trigger: 'blur' }],
+}))
 
 function dotStyle(i) {
   const r = () => Math.random()
@@ -65,10 +67,10 @@ async function handleLogin() {
   loading.value = true
   try {
     await userStore.login(form)
-    ElMessage.success('登录成功')
+    ElMessage.success(t('auth.loginSuccess'))
     router.push('/')
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || e.response?.data?.non_field_errors?.[0] || '登录失败')
+    ElMessage.error(e.response?.data?.detail || e.response?.data?.non_field_errors?.[0] || t('auth.loginFailed'))
   } finally {
     loading.value = false
   }

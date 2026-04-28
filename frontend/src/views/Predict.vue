@@ -58,28 +58,26 @@
                   </div>
                   <div class="mol-section">
                     <span class="mol-section-label">{{ $t('predict.apiLabel') }}</span>
-                    <el-form-item prop="api_smiles">
-                      <div class="name-search-row">
-                        <el-input v-model="apiNameQuery" :placeholder="$t('predict.namePlaceholder')" @keyup.enter="lookupSmiles('api')" clearable />
-                        <el-button type="primary" :loading="apiLookupLoading" @click="lookupSmiles('api')">{{ $t('predict.lookup') }}</el-button>
-                      </div>
-                      <div v-if="form.api_smiles" class="resolved-smiles">
-                        <span class="resolved-label">SMILES</span>
-                        <code>{{ form.api_smiles }}</code>
-                      </div>
+                    <div class="name-search-row">
+                      <el-input v-model="apiNameQuery" :placeholder="$t('predict.namePlaceholder')" @keyup.enter="lookupSmiles('api')" clearable />
+                      <el-button type="primary" :loading="apiLookupLoading" @click="lookupSmiles('api')">{{ $t('predict.lookup') }}</el-button>
+                    </div>
+                    <el-form-item prop="api_smiles" class="resolved-smiles-item">
+                      <el-input v-model="form.api_smiles" :placeholder="$t('predict.smilesAutoFill')">
+                        <template #prefix><span class="input-label">SMILES</span></template>
+                      </el-input>
                     </el-form-item>
                   </div>
                   <div class="mol-section">
                     <span class="mol-section-label">{{ $t('predict.coformerLabel') }}</span>
-                    <el-form-item prop="coformer_smiles">
-                      <div class="name-search-row">
-                        <el-input v-model="cfNameQuery" :placeholder="$t('predict.namePlaceholder')" @keyup.enter="lookupSmiles('cf')" clearable />
-                        <el-button type="primary" :loading="cfLookupLoading" @click="lookupSmiles('cf')">{{ $t('predict.lookup') }}</el-button>
-                      </div>
-                      <div v-if="form.coformer_smiles" class="resolved-smiles">
-                        <span class="resolved-label">SMILES</span>
-                        <code>{{ form.coformer_smiles }}</code>
-                      </div>
+                    <div class="name-search-row">
+                      <el-input v-model="cfNameQuery" :placeholder="$t('predict.namePlaceholder')" @keyup.enter="lookupSmiles('cf')" clearable />
+                      <el-button type="primary" :loading="cfLookupLoading" @click="lookupSmiles('cf')">{{ $t('predict.lookup') }}</el-button>
+                    </div>
+                    <el-form-item prop="coformer_smiles" class="resolved-smiles-item">
+                      <el-input v-model="form.coformer_smiles" :placeholder="$t('predict.smilesAutoFill')">
+                        <template #prefix><span class="input-label">SMILES</span></template>
+                      </el-input>
                     </el-form-item>
                   </div>
                 </el-tab-pane>
@@ -322,8 +320,12 @@ function autoSelectModel(formObj) {
 }
 
 async function handlePredict() {
+  autoSelectModel(form)
   const valid = await formRef.value.validate().catch(() => false)
-  if (!valid) return
+  if (!valid) {
+    ElMessage.warning(t('predict.formIncomplete'))
+    return
+  }
   predicting.value = true; result.value = null
   try {
     const { data } = await taskApi.predict({ model_id: form.model_id, api_smiles: form.api_smiles, coformer_smiles: form.coformer_smiles })
@@ -387,8 +389,11 @@ onMounted(loadModels)
 .mol-section-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
 .input-label { font-size: 11px; font-weight: 700; color: var(--accent); letter-spacing: .5px; }
 
-.name-search-row { display: flex; gap: 8px; width: 100%; }
+.name-search-row { display: flex; gap: 8px; width: 100%; margin-bottom: 10px; }
 .name-search-row .el-input { flex: 1; }
+
+.resolved-smiles-item { margin-bottom: 0; }
+.resolved-smiles-item :deep(.el-form-item__content) { line-height: 1; }
 
 .resolved-smiles { margin-top: 8px; padding: 8px 12px; background: #eff6ff; border-radius: 6px; display: flex; align-items: center; gap: 8px; }
 .resolved-label { font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0; }

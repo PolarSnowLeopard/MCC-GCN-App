@@ -5,6 +5,7 @@ export default {
     finetune: '模型微调',
     history: '历史记录',
     models: '模型管理',
+    docs: '用户手册',
   },
   common: {
     admin: '管理员',

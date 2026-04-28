@@ -73,3 +73,6 @@ jobs:
 
       - name: Build frontend image
         run: docker build -t mcc-gcn-frontend ./frontend
+
+      - name: Build docs image
+        run: docker build -t mcc-gcn-docs ./docs

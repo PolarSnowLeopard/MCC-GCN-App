@@ -40,6 +40,14 @@
           <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>
           <span>{{ $t('nav.models') }}</span>
         </router-link>
+
+        <div class="nav-divider"></div>
+
+        <a :href="docsHref" target="_blank" rel="noopener" class="nav-item nav-item-external">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+          <span>{{ $t('nav.docs') }}</span>
+          <svg class="nav-external-icon" viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -82,6 +90,7 @@ const userStore = useUserStore()
 const { locale } = useI18n()
 
 const showSidebar = computed(() => route.name !== 'Login' && route.name !== 'Register')
+const docsHref = computed(() => (locale.value === 'zh-CN' ? '/docs/zh/' : '/docs/'))
 
 function toggleLang() {
   const next = locale.value === 'zh-CN' ? 'en' : 'zh-CN'
@@ -204,6 +213,15 @@ body {
   background: var(--accent);
   color: #fff;
   font-weight: 500;
+}
+
+.nav-item-external {
+  position: relative;
+}
+
+.nav-external-icon {
+  margin-left: auto;
+  opacity: .55;
 }
 
 .nav-divider {

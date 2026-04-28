@@ -6,7 +6,7 @@
 
 A full-stack AI platform for cocrystal research — from single-pair prediction and high-throughput virtual screening, to model fine-tuning and version management, all delivered through a polished web UI.
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · **[User Guide →](http://localhost:8880/docs/)** (after deployment)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · **[User Guide →](https://your-domain/docs/)** (after deployment)
 
 [![CI](https://img.shields.io/badge/CI-passing-success?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
@@ -127,10 +127,10 @@ The model is a GCN pretrained on the Cambridge Structural Database (CSD), produc
                       ┌────────────────────────────┐
                       │         Browser            │
                       └──────────────┬─────────────┘
-                                     │  HTTP :8880
+                                     │  HTTPS :443  (HTTP :80 → 301)
                                      ▼
                       ┌────────────────────────────┐
-                      │         Nginx (80)         │
+                      │       Nginx (TLS)          │
                       │  / → frontend  /api → api  │
                       └──────┬──────────────┬──────┘
                              │              │
@@ -206,16 +206,28 @@ MCC-GCN-App/
 git clone https://github.com/<your-org>/MCC-GCN-App.git
 cd MCC-GCN-App
 cp .env.example .env
-# Edit .env: APP_PORT, SECRET_KEY, DB_PASSWORD, CORS_ALLOWED_ORIGINS, ...
+# Edit .env: SECRET_KEY, DB_PASSWORD, CORS_ALLOWED_ORIGINS, CSRF_TRUSTED_ORIGINS, ...
 ```
 
-#### 2. Build & start
+#### 2. Provide TLS certificates
+
+The Nginx container terminates TLS itself and expects two files at fixed paths:
+
+```
+nginx/certs/fullchain.pem   # full certificate chain
+nginx/certs/privkey.pem     # private key
+```
+
+Upload them manually (e.g. `scp`) — see [`nginx/certs/README.md`](./nginx/certs/README.md) for details.
+Real certificate files are git-ignored.
+
+#### 3. Build & start
 
 ```bash
 docker compose up -d --build
 ```
 
-#### 3. Initialize the database & seed built-in models
+#### 4. Initialize the database & seed built-in models
 
 ```bash
 docker compose exec backend python manage.py migrate
@@ -223,15 +235,17 @@ docker compose exec backend python manage.py seed_builtin_model
 docker compose exec backend python manage.py createsuperuser   # optional
 ```
 
-#### 4. Access
+#### 5. Access
 
 | Entry | URL |
 | --- | --- |
-| Web app | <http://localhost:8880/> |
-| Django admin | <http://localhost:8880/admin/> |
-| REST API | <http://localhost:8880/api/> |
+| Web app | `https://<your-domain>/` |
+| Django admin | `https://<your-domain>/admin/` |
+| REST API | `https://<your-domain>/api/` |
+| User guide | `https://<your-domain>/docs/` |
 
-> When deploying to a server, replace `localhost` with the server IP / domain. Change the public port via `APP_PORT` in `.env`.
+> Plain HTTP (`http://<your-domain>/`) is automatically 301-redirected to HTTPS.
+> Override the public ports with `APP_HTTP_PORT` / `APP_HTTPS_PORT` in `.env` if `80` / `443` are taken on the host.
 
 ---
 
@@ -286,7 +300,8 @@ All variables are loaded from a root-level `.env` file by `docker compose`. See 
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `APP_PORT` | `8880` | Public port exposed by Nginx |
+| `APP_HTTP_PORT` | `80` | Public HTTP port (auto-redirects to HTTPS) |
+| `APP_HTTPS_PORT` | `443` | Public HTTPS port |
 | `DEBUG` | `False` | Django debug mode (turn off in production) |
 | `SECRET_KEY` | `change-me-...` | Django secret key — **must be changed in production** |
 | `DB_NAME` | `mcc_gcn` | Database name |
@@ -296,8 +311,9 @@ All variables are loaded from a root-level `.env` file by `docker compose`. See 
 | `DB_PORT` | `5432` | Database port |
 | `CELERY_BROKER_URL` | `redis://redis:6379/0` | Celery broker URL |
 | `CELERY_RESULT_BACKEND` | `redis://redis:6379/0` | Celery result backend |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost` | Allowed CORS origins (comma-separated) |
-| `ALLOWED_HOSTS` | `*` | Django allowed hosts |
+| `ALLOWED_HOSTS` | `*` | Django allowed hosts (comma-separated) |
+| `CORS_ALLOWED_ORIGINS` | `https://example.com` | Allowed CORS origins (comma-separated) |
+| `CSRF_TRUSTED_ORIGINS` | _(empty)_ | Comma-separated origins trusted by Django CSRF — must include the public HTTPS origin for admin to work |
 
 ---
 
@@ -489,10 +505,21 @@ docker compose exec backend python manage.py createsuperuser
 ## Troubleshooting
 
 <details>
-<summary><b>1. The page is blank after deploying on port 8880.</b></summary>
+<summary><b>1. The page is blank / unreachable after deployment.</b></summary>
 
 Check `docker compose ps` — `nginx`, `frontend`, and `backend` should all be `running`.
 Then `docker compose logs -f frontend` to look for build errors.
+For TLS-related issues run `docker compose exec nginx nginx -t` to validate the config and confirm
+that `nginx/certs/fullchain.pem` and `nginx/certs/privkey.pem` exist and are readable.
+
+</details>
+
+<details>
+<summary><b>1b. Browser shows ERR_SSL_PROTOCOL_ERROR / certificate warnings.</b></summary>
+
+Make sure the certificate files are actually a chain + private key for the public domain you're
+visiting, named exactly `fullchain.pem` + `privkey.pem`, located under `nginx/certs/`. Then
+`docker compose restart nginx`.
 
 </details>
 
@@ -524,9 +551,17 @@ Confirm Redis is reachable: `docker compose exec redis redis-cli ping` should re
 </details>
 
 <details>
-<summary><b>5. How do I change the public port?</b></summary>
+<summary><b>5. How do I change the public ports?</b></summary>
 
-Edit `APP_PORT=xxxx` in `.env`, then `docker compose up -d` to recreate the Nginx container.
+Edit `APP_HTTP_PORT` / `APP_HTTPS_PORT` in `.env`, then `docker compose up -d` to recreate the Nginx container.
+
+</details>
+
+<details>
+<summary><b>7. How do I rotate / renew the TLS certificate?</b></summary>
+
+Replace `nginx/certs/fullchain.pem` and `nginx/certs/privkey.pem` with the new files (same names),
+then `docker compose restart nginx`. No rebuild needed.
 
 </details>
 

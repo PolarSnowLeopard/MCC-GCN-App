@@ -8,7 +8,7 @@
 
 一个面向药物共晶研究的全栈式 AI 平台：从单分子对预测、批量虚拟筛选，到模型微调与版本管理，提供端到端的 Web 化解决方案。
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · **[用户使用文档 →](http://localhost:8880/docs/)**（部署后访问）
+[English](./README.md) · [简体中文](./README.zh-CN.md) · **[用户使用文档 →](https://your-domain/docs/)**（部署后访问）
 
 [![CI](https://img.shields.io/badge/CI-passing-success?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
@@ -129,10 +129,10 @@
                       ┌────────────────────────────┐
                       │         Browser            │
                       └──────────────┬─────────────┘
-                                     │  HTTP :8880
+                                     │  HTTPS :443  (HTTP :80 → 301)
                                      ▼
                       ┌────────────────────────────┐
-                      │         Nginx (80)         │
+                      │       Nginx (TLS)          │
                       │  / → frontend  /api → api  │
                       └──────┬──────────────┬──────┘
                              │              │
@@ -208,16 +208,28 @@ MCC-GCN-App/
 git clone https://github.com/<your-org>/MCC-GCN-App.git
 cd MCC-GCN-App
 cp .env.example .env
-# 按需编辑 .env：APP_PORT、SECRET_KEY、DB_PASSWORD、CORS_ALLOWED_ORIGINS …
+# 按需编辑 .env：SECRET_KEY、DB_PASSWORD、CORS_ALLOWED_ORIGINS、CSRF_TRUSTED_ORIGINS …
 ```
 
-#### 2. 构建并启动
+#### 2. 上传 TLS 证书
+
+Nginx 容器自身负责 TLS 终止，按固定路径读取以下两个文件：
+
+```
+nginx/certs/fullchain.pem   # 完整证书链
+nginx/certs/privkey.pem     # 私钥
+```
+
+把证书手动 `scp` 到这两个固定文件名（详见 [`nginx/certs/README.md`](./nginx/certs/README.md)）。
+真实证书已被 git 忽略，不会进版本库。
+
+#### 3. 构建并启动
 
 ```bash
 docker compose up -d --build
 ```
 
-#### 3. 初始化数据库与内置模型
+#### 4. 初始化数据库与内置模型
 
 ```bash
 docker compose exec backend python manage.py migrate
@@ -225,15 +237,17 @@ docker compose exec backend python manage.py seed_builtin_model
 docker compose exec backend python manage.py createsuperuser   # 可选：创建管理员
 ```
 
-#### 4. 访问
+#### 5. 访问
 
 | 入口 | 地址 |
 | --- | --- |
-| Web 应用 | <http://localhost:8880/> |
-| Django Admin | <http://localhost:8880/admin/> |
-| REST API | <http://localhost:8880/api/> |
+| Web 应用 | `https://<你的域名>/` |
+| Django Admin | `https://<你的域名>/admin/` |
+| REST API | `https://<你的域名>/api/` |
+| 用户使用文档 | `https://<你的域名>/docs/` |
 
-> 部署到服务器时把 `localhost` 替换为公网 IP / 域名，并通过 `.env` 中的 `APP_PORT` 修改对外端口。
+> 普通 HTTP（`http://<你的域名>/`）会自动 301 跳转到 HTTPS。
+> 如果宿主机的 80 / 443 端口被占用，可在 `.env` 中通过 `APP_HTTP_PORT` / `APP_HTTPS_PORT` 改对外端口。
 
 ---
 
@@ -288,7 +302,8 @@ npm run dev          # 默认 http://localhost:5173 ，会自动代理 /api → 
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `APP_PORT` | `8880` | Nginx 对外暴露的端口 |
+| `APP_HTTP_PORT` | `80` | Nginx 对外暴露的 HTTP 端口（自动跳转到 HTTPS） |
+| `APP_HTTPS_PORT` | `443` | Nginx 对外暴露的 HTTPS 端口 |
 | `DEBUG` | `False` | Django 调试模式（生产请关闭） |
 | `SECRET_KEY` | `change-me-...` | Django 密钥，**生产务必修改** |
 | `DB_NAME` | `mcc_gcn` | 数据库名 |
@@ -298,8 +313,9 @@ npm run dev          # 默认 http://localhost:5173 ，会自动代理 /api → 
 | `DB_PORT` | `5432` | 数据库端口 |
 | `CELERY_BROKER_URL` | `redis://redis:6379/0` | Celery 消息代理 |
 | `CELERY_RESULT_BACKEND` | `redis://redis:6379/0` | Celery 结果后端 |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost` | 允许跨域的源（逗号分隔） |
-| `ALLOWED_HOSTS` | `*` | Django 允许的 Host |
+| `ALLOWED_HOSTS` | `*` | Django 允许的 Host（逗号分隔） |
+| `CORS_ALLOWED_ORIGINS` | `https://example.com` | 允许跨域的源（逗号分隔） |
+| `CSRF_TRUSTED_ORIGINS` | _(空)_ | Django CSRF 信任的来源（逗号分隔），admin 在 HTTPS 下需要配置当前公网 origin |
 
 ---
 
@@ -491,10 +507,20 @@ docker compose exec backend python manage.py createsuperuser
 ## 常见问题
 
 <details>
-<summary><b>1. 部署后访问 8880 端口空白？</b></summary>
+<summary><b>1. 部署后页面空白 / 无法访问？</b></summary>
 
 检查 `docker compose ps` 中 `nginx`、`frontend`、`backend` 是否都为 `running`；
 然后 `docker compose logs -f frontend` 查看是否有构建失败。
+若怀疑 TLS 配置问题，运行 `docker compose exec nginx nginx -t` 校验配置，并确认
+`nginx/certs/fullchain.pem` 与 `nginx/certs/privkey.pem` 存在且可读。
+
+</details>
+
+<details>
+<summary><b>1b. 浏览器报 ERR_SSL_PROTOCOL_ERROR / 证书警告？</b></summary>
+
+确认证书与私钥确实属于当前访问的域名，文件名严格为 `fullchain.pem` + `privkey.pem`，
+位于 `nginx/certs/` 下，然后执行 `docker compose restart nginx`。
 
 </details>
 
@@ -526,9 +552,17 @@ docker compose up -d backend
 </details>
 
 <details>
-<summary><b>5. 想换默认端口？</b></summary>
+<summary><b>5. 想换对外端口？</b></summary>
 
-修改根目录 `.env` 中 `APP_PORT=xxxx`，然后 `docker compose up -d` 重新创建即可。
+修改根目录 `.env` 中 `APP_HTTP_PORT` / `APP_HTTPS_PORT`，然后 `docker compose up -d` 重新创建即可。
+
+</details>
+
+<details>
+<summary><b>7. 如何更换 / 续期 TLS 证书？</b></summary>
+
+用新文件覆盖 `nginx/certs/fullchain.pem` 与 `nginx/certs/privkey.pem`（保持文件名不变），
+然后执行 `docker compose restart nginx`，无需重新构建镜像。
 
 </details>
 

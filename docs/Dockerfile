@@ -1,4 +1,7 @@
 FROM node:22-alpine AS build
+# `git` is required by VitePress when `lastUpdated: true` is enabled
+# (it shells out to `git log` to compute per-page timestamps).
+RUN apk add --no-cache git
 WORKDIR /docs
 COPY package*.json ./
 RUN npm install --no-audit --no-fund

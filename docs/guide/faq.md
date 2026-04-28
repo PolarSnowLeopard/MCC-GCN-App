@@ -1,121 +1,125 @@
 # FAQ
 
-Quick answers to the questions that come up most often.
+Answers to the most commonly raised questions, organised by topic.
 
-## Sign-in & account
+## Sign-in and account
 
 ### I forgot my password.
 
-There is no self-service reset in the current version. Contact your administrator — they can reset it on the server using a single command (see the [project README](https://github.com/PolarSnowLeopard/MCC-GCN-App#operations-cheatsheet)).
+The current version does not offer self-service password reset. Contact your administrator — they can reset the password on the server using a single management command (see the [project README](https://github.com/PolarSnowLeopard/MCC-GCN-App#operations-cheatsheet)).
 
-### My account works but the sidebar is empty.
+### I signed in but the sidebar is empty.
 
-You're probably looking at the **Login** or **Register** page (these don't show the sidebar). Sign in to land on the main workspace.
+You are most likely viewing the Sign In or Register page, which do not display the sidebar. Complete the sign-in process to reach the main workspace.
 
-## SMILES & input
+## SMILES and input
 
-### My SMILES is "invalid" — what does that mean?
+### The platform reports my SMILES as "invalid".
 
-The platform tries to parse the SMILES with RDKit. "Invalid" means RDKit could not build a molecule graph from the string. The fastest fix:
+The platform uses RDKit for SMILES parsing. An "invalid" result means RDKit could not construct a molecular graph from the input string. The recommended fix:
 
-- Take the *Canonical SMILES* from PubChem for that molecule and paste that.
+- Retrieve the compound's *Canonical SMILES* from [PubChem](https://pubchem.ncbi.nlm.nih.gov/) and paste it directly.
 
-### I have a Chinese compound name. The Name lookup says "not found".
+### The Name/CAS lookup returns "Molecule not found".
 
-The lookup uses PubChem, which only knows English names and CAS numbers. Either:
+The lookup feature queries three upstream databases in sequence: **PubChem**, **NIH NCI Cactus**, and **OPSIN**. If none of them recognises the query:
 
-- Translate the name to English, or
-- Use the CAS registry number, or
-- Paste the SMILES directly (use the **SMILES Input** tab).
+- Verify the spelling of the English compound name.
+- Try the **CAS registry number** instead.
+- As a last resort, switch to the **By SMILES** tab and paste the SMILES string directly.
+
+::: info
+Chinese compound names are not supported by any of the upstream resolvers. Use the English name or CAS number.
+:::
 
 ### Can I predict salts written as multi-component SMILES (`X.Y`)?
 
-Yes, RDKit accepts them, but the model will treat the whole `X.Y` as one molecule. For best results, split the salt across the **API** and **Coformer** slots instead.
+Yes — RDKit will parse them. However, the model featurises the entire `X.Y` as a single graph. For more accurate results, split the salt's components across the **API** and **Coformer** input fields.
 
 ## Prediction
 
-### What does *Confidence* mean exactly?
+### What does "Confidence" represent?
 
-It is the **maximum** of the four class probabilities. So a prediction with `[0.05, 0.05, 0.85, 0.05]` shows a confidence of `85.0%`. The full vector is also displayed below the hero result.
+Confidence is the **maximum** of the four class probabilities. For example, a probability vector of `[0.05, 0.05, 0.85, 0.05]` yields a confidence of `85.0%`. The complete vector is always displayed below the primary result.
 
-### Why does the platform say it does "bidirectional inference"?
+### What is "bidirectional inference"?
 
-The molecule pair `(A, B)` builds a different graph than `(B, A)` because the platform's featurizer is not strictly symmetric. The platform internally runs both orderings and averages the softmax. You don't need to swap manually.
+The molecular graph constructed from the pair `(A, B)` is structurally different from `(B, A)` due to the platform's featurisation scheme. To mitigate this asymmetry, the platform evaluates both orderings and averages the resulting softmax vectors. This is handled automatically.
 
 ## Batch screening
 
-### My batch task is stuck at *Queued* forever.
+### My batch task is stuck at "Queued".
 
-Two possibilities:
+Two possible causes:
 
-1. The Celery worker is overloaded — give it a minute, then refresh.
-2. The Celery worker is down. Tell your administrator to check `docker compose logs -f celery`. The task itself isn't lost; it resumes when the worker is back.
+1. **Worker backlog** — the Celery worker is processing prior tasks. Allow a few minutes, then refresh.
+2. **Worker unavailable** — the Celery process may have stopped. Contact your administrator and ask them to inspect `docker compose logs -f celery`. The task is not lost; it will resume when the worker recovers.
 
-### Why don't I see results when I come back to the Batch page?
+### Why are results not visible when I return to the Batch Screening page?
 
-The results table is rendered from the in-page polling state, which resets when you leave. To re-open a completed batch, go to **History → Prediction Tasks** and click the row.
+The results table is rendered from the in-page polling state, which resets upon navigation. To re-open a completed batch, go to **History** and select the corresponding row.
 
-### How big can a batch be?
+### Is there a maximum batch size?
 
-There's no hard cap, but the inference pipeline is CPU-only by default. Batches under ~5,000 pairs are comfortable; very large screens are best split into sequential submissions.
+There is no enforced upper limit. However, the default inference pipeline uses CPU only. Submissions of approximately 5,000 pairs or fewer complete within a reasonable time frame. For larger screens, split the input into sequential submissions.
 
 ## Fine-tuning
 
-### My fine-tune failed with *"Need at least 2 valid training samples"*.
+### My fine-tune job failed with "Need at least 2 valid training samples".
 
-Either fewer than 2 rows in your CSV had valid SMILES on **both** sides, or the labels weren't integers `0`–`3`. Open the failed task's detail to see which rows the parser rejected.
+This error indicates that fewer than two rows in the submitted CSV contained valid SMILES on both sides **and** a label in `{0, 1, 2, 3}`. Expand the failed task's detail view to identify which rows were rejected.
 
-### Training is slow — anything I can do?
+### Training is slow. How can I speed it up?
 
-The pipeline runs on CPU. Two levers:
+The training pipeline runs on CPU by default. Two practical options:
 
-- **Smaller dataset** for prototyping; scale up once your config looks right.
-- **Fewer epochs** — the default `50` is conservative. Many small datasets converge well before that.
+- **Use a smaller dataset** during prototyping; scale up once the configuration is validated.
+- **Reduce the number of epochs** — the default of 50 is conservative. Many small datasets converge well before that threshold.
 
-If your administrator has a GPU-enabled deployment, training will be substantially faster automatically.
+If your administrator has deployed a GPU-enabled build, training will be substantially faster automatically.
 
-### Where does my fine-tuned model end up?
+### Where does the fine-tuned model appear?
 
-It appears in the [Models page](./models) as **Draft**. You can [test](./finetune#testing-the-result) it from the same expanded task, then [publish](./finetune#publishing-the-result) when you're happy.
+It is registered on the [Models](./models) page with **Draft** status. You can [test](./finetune#testing) it from the task detail view, then [publish](./finetune#publishing) it when satisfied.
 
-### Can I delete the model produced by a failed fine-tune?
+### Can I delete a failed fine-tune task?
 
-Failed runs don't produce a model file at all; nothing to delete. The failed task itself stays in [History](./history) for reference. If you want it gone permanently, ask your administrator.
+Failed tasks do not produce a model file, so there is nothing to delete on the model side. The task record itself is retained in [History](./history) for audit purposes. To remove it permanently, contact your administrator.
 
 ## Models
 
-### Why is *Built-in* greyed out — can I delete it?
+### Why can I not delete a built-in model?
 
-Built-in models are protected. The platform refuses to delete them from the UI, and the API returns an error too. They're meant as common defaults for everyone.
+Built-in models are protected. The UI and the API both refuse deletion requests. These models serve as shared defaults for all users on the platform.
 
-### My uploaded `.pth` won't load.
+### My uploaded `.pth` file fails to load.
 
-Most likely you saved the whole model object instead of just its state dict:
+The most common cause is saving the full model object rather than the state dict:
 
 ```python
-# wrong — saves the entire object
+# Incorrect — serialises the entire model object
 torch.save(model, 'model.pth')
 
-# correct — saves only the parameters
+# Correct — serialises only the learnable parameters
 torch.save(model.state_dict(), 'model.pth')
 ```
 
-The platform expects the second form, with weights matching the project's `GCNNet` architecture. See [`backend/mcc_gcn/models/gcn.py`](https://github.com/PolarSnowLeopard/MCC-GCN-App/blob/main/backend/mcc_gcn/models/gcn.py).
+The platform expects the second form. The state dict must be compatible with the project's `GCNNet` architecture (see [`backend/mcc_gcn/models/gcn.py`](https://github.com/PolarSnowLeopard/MCC-GCN-App/blob/main/backend/mcc_gcn/models/gcn.py)).
 
-## UI & language
+## Interface and language
 
 ### How do I switch between English and Chinese?
 
-Click the small `EN` / `中文` button in the top-right corner of any page. The whole UI flips. Your choice is remembered in your browser.
+Click the **`EN`** / **`中文`** toggle in the upper-right corner of any page. The entire interface switches immediately. Your preference is stored in browser local storage and persists across sessions.
 
-### The page looks broken / styles missing.
+### The page appears unstyled or broken.
 
-Hard-refresh: `Ctrl/Cmd + Shift + R`. If the problem persists — particularly on the Django admin under `/admin/` — tell your administrator; this is usually a deployment issue with static files.
+Perform a hard refresh: `Ctrl + Shift + R` (Windows/Linux) or `Cmd + Shift + R` (macOS). If the issue persists — particularly on the Django admin panel at `/admin/` — report it to your administrator, as this is typically a deployment-level static file issue.
 
-## Still stuck?
+## Still need help?
 
-Open an issue on the [project GitHub](https://github.com/PolarSnowLeopard/MCC-GCN-App/issues), or contact your platform administrator with:
+Open an issue on the [project GitHub repository](https://github.com/PolarSnowLeopard/MCC-GCN-App/issues), or contact your platform administrator with the following information:
 
-1. The page you were on;
-2. Exactly what you typed / uploaded (or a screenshot);
-3. The error toast text, if any.
+1. The page you were on.
+2. The exact input you provided (or a screenshot).
+3. The error message text, if any.

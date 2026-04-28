@@ -1,43 +1,46 @@
 # Introduction
 
-MCC-GCN is a web platform for **multicomponent crystal (MCC) prediction**. Given two molecules, the model predicts how they are most likely to crystallize together.
+MCC-GCN is a web-based platform for **multicomponent crystal (MCC) prediction**. Given a pair of molecules — an active pharmaceutical ingredient (API) and a coformer — the underlying graph convolutional network predicts how they are most likely to co-crystallise.
 
-## What you can do
+## Capabilities
 
-| Workflow | What it produces |
+| Workflow | Output |
 | --- | --- |
-| **Single Prediction** | A 4-class label and probability vector for one molecule pair |
-| **Batch Screening** | The same prediction repeated across many pairs from a CSV |
-| **Fine-tuning** | A new model trained on your own labelled data, derived from a built-in backbone |
-| **Model Management** | Upload, publish, share, or delete your weight files |
-| **History** | A full audit trail of everything you have submitted |
+| **Single Prediction** | A four-class label and per-class probability vector for one molecule pair |
+| **Batch Screening** | The same prediction applied to hundreds or thousands of pairs supplied via CSV |
+| **Fine-tuning** | A new model derived from a built-in backbone, trained on your own labelled data |
+| **Model Management** | Upload, publish, share, or delete weight files |
+| **History** | A persistent audit trail of every submitted task |
 
-## The four prediction classes
+## Prediction classes
 
-The model outputs one of four labels for every molecule pair:
+The model assigns one of four labels to every molecule pair:
 
-| Label | Meaning |
-| --- | --- |
-| `Negative` | The two molecules are not expected to form a multicomponent crystal |
-| `Salt` | They are expected to form a salt |
-| `Cocrystal` | They are expected to form a cocrystal |
-| `Solvate` | They are expected to form a solvate |
+| Class | Label | Interpretation |
+| :---: | --- | --- |
+| 0 | **Negative** | The two molecules are not expected to form a multicomponent crystal |
+| 1 | **Salt** | A proton-transfer salt is the most likely outcome |
+| 2 | **Cocrystal** | A cocrystal (non-ionic) is the most likely outcome |
+| 3 | **Solvate** | A solvate is the most likely outcome |
 
-Probabilities for the four classes always sum to 1. The label shown in the UI is simply the class with the highest probability; you can read the full vector in any prediction result panel.
+The four class probabilities always sum to 1. The label displayed in the UI corresponds to the class with the highest probability; the full vector is available in every result panel.
 
-## Who this guide is for
+::: info Bidirectional inference
+The featurisation step is not strictly symmetric with respect to molecule ordering. To compensate, the platform internally evaluates both `(API, Coformer)` and `(Coformer, API)` and averages the resulting softmax vectors. This happens transparently — no manual intervention is needed.
+:::
 
-This documentation assumes you are a **researcher** using the platform — not a developer or sysadmin. It focuses on:
+## Audience
 
-- Where to click in the UI;
-- What input the platform expects;
-- What output to read off the screen.
+This guide is written for **researchers** who use the platform through its web interface. It covers:
 
-For deployment and development topics (Docker, environment variables, REST API), see the project [`README`](https://github.com/PolarSnowLeopard/MCC-GCN-App#readme) instead.
+- Navigation and page layout;
+- Expected inputs and their formats;
+- How to interpret outputs.
 
-## Where to go next
+For deployment, environment configuration, and REST API documentation, refer to the project [README](https://github.com/PolarSnowLeopard/MCC-GCN-App#readme).
 
-- **First time?** Start with [Quick Start](./getting-started) to register an account and run your first prediction.
-- **Already signed in?** Pick a workflow:
-  [Single Prediction](./predict) · [Batch Screening](./batch) · [Fine-tuning](./finetune)
-- **Stuck?** Check the [FAQ](./faq).
+## Navigation
+
+- **First time?** Begin with [Quick Start](./getting-started) — register, sign in, and run your first prediction.
+- **Already signed in?** Pick a workflow: [Single Prediction](./predict) · [Batch Screening](./batch) · [Fine-tuning](./finetune)
+- **Having trouble?** Consult the [FAQ](./faq).

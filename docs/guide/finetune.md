@@ -1,125 +1,121 @@
 # Fine-tuning
 
-If the built-in models aren't quite right for your chemistry, you can **fine-tune** one of them on your own labelled data and get a private model back.
+When the built-in models do not adequately capture the characteristics of your chemical system, you can **fine-tune** a base model on your own labelled dataset to produce a domain-specific predictor.
 
-::: tip Reach the page
-Click 🎯 **Fine-tuning** in the sidebar.
+::: tip Navigation
+Select **Fine-tuning** in the sidebar.
 :::
 
-## What "fine-tuning" means here
+## What fine-tuning does
 
-You provide a CSV of molecule pairs you've already classified (positive / negative / salt / etc.). The platform:
+You supply a CSV of molecule pairs with known classifications. The platform:
 
-1. Loads the **base model** weights you choose;
-2. Continues training only the last few dense layers;
-3. Saves the weights with the best validation performance;
-4. Registers a new model in your account as **Draft**.
+1. Loads the selected **base model** weights;
+2. Freezes the earlier graph convolution layers and re-trains only the final dense layers;
+3. Saves the checkpoint that maximises **balanced validation accuracy**;
+4. Registers a new model in your account with **Draft** status.
 
-Once it's a draft, it's only visible to you. You can [test it](#testing-the-result), then [publish](#publishing-the-result) it to make it visible to others.
+A draft model is visible only to you. After evaluation, you can [publish](#publishing) it to make it accessible to other users.
 
-## Page anatomy
+## Page layout
 
-Two columns:
+The page is split into two columns:
 
-- **Left** — *Fine-tune Configuration* form (your job submission)
-- **Right** — *Fine-tune Tasks* (your past and ongoing fine-tune runs)
+- **Left** — *Fine-tune Configuration* form
+- **Right** — *Fine-tune Tasks* list (your current and past jobs)
 
-## Step 1 — Prepare your training data
+## Step 1 — Prepare training data
 
-The form expects a CSV with **three columns**:
+The form expects a CSV with three columns:
 
 ```csv
 api_smiles,coformer_smiles,label
 CCO,O=C(O)c1ccccc1O,2
 c1ccccc1,CC(=O)O,0
-...
 ```
 
-Label values:
+Label encoding:
 
 | Value | Class |
-| --- | --- |
-| `0` | `Negative` |
-| `1` | `Salt` |
-| `2` | `Cocrystal` |
-| `3` | `Solvate` |
+| :---: | --- |
+| `0` | Negative |
+| `1` | Salt |
+| `2` | Cocrystal |
+| `3` | Solvate |
 
-::: tip Don't have a template?
-Click **Download Template** next to the upload area for a starter CSV.
+::: tip
+Click **Download Template** next to the upload area for a ready-to-use starter CSV.
 :::
 
-::: warning Minimum requirements
-The training pipeline requires **at least 2 valid rows** (rows where both SMILES parse and the label is a valid integer). Anything fewer fails with `Need at least 2 valid training samples`.
-For meaningful fine-tuning, plan for **dozens to hundreds** of rows, with reasonable class balance.
+::: warning Minimum data requirements
+The training pipeline requires **at least 2 rows** where both SMILES parse successfully and the label is a valid integer in `{0, 1, 2, 3}`. For meaningful transfer learning, plan for **dozens to hundreds** of labelled pairs with reasonable class balance.
 :::
 
-## Step 2 — Submit a job
+## Step 2 — Configure and submit
 
-Fill in the form on the left:
+Complete the form on the left:
 
-| Field | What to enter |
+| Field | Description |
 | --- | --- |
-| **Base Model** | Pick a model to start from. The built-in **`MCC-GCN Pretrained v1`** is the standard choice. |
-| **Task Name** | Anything memorable, e.g. `aspirin-derivatives-2026-04`. The resulting model file will be named after it. |
-| **Training Data** | Upload your CSV (drag-drop or click). |
+| **Base Model** | The model to initialise from. The built-in **MCC-GCN Pretrained v1** is the standard choice. |
+| **Task Name** | A descriptive identifier (e.g. `api-screening-2026-04`). The resulting model file inherits this name. |
+| **Training Data** | Upload your CSV via drag-and-drop or file picker. |
 
-### Advanced parameters
+#### Advanced parameters
 
-Click **Advanced Parameters** to expand. Defaults are sensible — only change them if you know why.
+Expand the **Advanced Parameters** section to reveal additional controls. The defaults are well-tuned for most scenarios — modify only with justification.
 
-| Parameter | Default | What it does |
+| Parameter | Default | Effect |
 | --- | --- | --- |
-| **Epochs** | `50` | How many passes over your data. Higher = more fitting, but also more risk of overfitting. |
-| **Batch Size** | `16` | Samples per gradient step. Lower works for tiny datasets. |
-| **Learning Rate** | `0.0003` | Step size of the optimizer. The default is well-tuned for most cases. |
+| **Epochs** | `50` | Number of full passes over the training data |
+| **Batch Size** | `16` | Samples per gradient update |
+| **Learning Rate** | `0.0003` | Optimiser step size |
 
-Other knobs (`weight_decay`, `train_layers` — how many dense layers to unfreeze) use safe defaults. Reach out to your administrator if you need to tune them.
+Other parameters (`weight_decay`, `train_layers`) use safe defaults. Consult your administrator if you need to adjust them.
 
-Click **Submit Fine-tune Task**.
+Click **Submit Fine-tune Task** to enqueue the job.
 
-## Step 3 — Watch progress
+## Step 3 — Monitor progress
 
-The submitted job appears at the top of the **right** panel.
+The submitted task appears at the top of the right panel. Click a row to expand its detail view:
 
-Click a row to expand its detail. You'll see one of:
-
-| Status | What's happening |
+| Status | Description |
 | --- | --- |
-| **Queued** | The Celery worker hasn't started yet. |
-| **Running** | The model is training. The training log streams as soon as the first epoch finishes. |
-| **Completed** | Training finished. Best validation balanced accuracy and the per-epoch log are shown. Action buttons appear. |
-| **Failed** | Something went wrong. The full traceback is in the error block — most often a malformed CSV or an unparseable SMILES. |
+| **Queued** | Waiting for the Celery worker |
+| **Running** | Training is in progress; the per-epoch log streams once the first epoch completes |
+| **Completed** | Training finished; best validation metrics and action buttons are shown |
+| **Failed** | An error occurred; the full traceback is displayed (common causes: malformed CSV, unparseable SMILES) |
 
-::: tip Refresh
-The right panel polls automatically while a task is running, but you can also click **Refresh** in the top-right of the panel to force-refresh the list.
+::: tip
+The task list polls automatically during training. You can also click **Refresh** in the panel header to force an update.
 :::
 
-## Step 4 — Use the result
+## Step 4 — Evaluate and use the result
 
-When a job completes, expanding it shows two action buttons.
+When a job completes, the expanded detail view offers two actions.
 
-### Testing the result
+### Testing
 
-Click **Test Model**. A dialog opens with two SMILES inputs.
+Click **Test Model** to open an inline evaluation dialog:
 
-1. Enter a known-good API and Coformer SMILES.
+1. Enter a known API and Coformer SMILES pair.
 2. Click **Predict**.
-3. The dialog shows the four-class probability bars. Use this to sanity-check the fine-tuned model before publishing.
+3. Review the four-class probability bars to assess whether the fine-tuned model behaves as expected.
 
-### Publishing the result
+### Publishing
 
-By default, the resulting model is **Draft** — only you can see and use it.
+By default, the resulting model has **Draft** status — visible only to you.
 
-To make it usable by other users on the platform:
+To make it available to all users on the platform:
 
 1. Click **Publish Model**.
-2. Confirm. The badge flips from `Draft` to `Published`.
+2. Confirm. The status tag changes from `Draft` to `Published`.
 
-You can also publish from the [Models page](./models) later.
+You can also publish later from the [Models](./models) page.
 
 ## Reading the training log
 
-The log is a per-epoch line of the form:
+Each epoch produces a log line with the following format:
 
 ```
 Epoch 12/50 | train_loss=0.2517 train_acc=0.8923 | val_loss=0.3104 val_acc=0.8421 val_bacc=0.8055
@@ -127,14 +123,14 @@ Epoch 12/50 | train_loss=0.2517 train_acc=0.8923 | val_loss=0.3104 val_acc=0.842
 
 | Metric | Meaning |
 | --- | --- |
-| `train_loss` / `train_acc` | Cross-entropy loss / accuracy on the training split |
-| `val_loss` / `val_acc` | Same, on the held-out 20% validation split |
-| `val_bacc` | **Balanced** validation accuracy — the platform saves the checkpoint that maximizes this value |
+| `train_loss` / `train_acc` | Cross-entropy loss and accuracy on the training split |
+| `val_loss` / `val_acc` | The same metrics on the held-out 20 % validation split |
+| `val_bacc` | Balanced validation accuracy — the checkpoint-selection criterion |
 
-Reasonable runs show `val_bacc` climbing for the first several epochs and plateauing. If `train_acc` keeps climbing while `val_acc` drops, you are overfitting — try fewer epochs or a larger dataset.
+A healthy training run shows `val_bacc` rising over the first several epochs and then plateauing. If `train_acc` continues to increase while `val_acc` declines, the model is overfitting. Reduce the number of epochs or increase the dataset size.
 
-## Where to go next
+## Next
 
-- See where your new model lives: [Model Management](./models).
-- Use the new model to predict more pairs: [Single Prediction](./predict) or [Batch Screening](./batch).
-- Need to revisit a past run? [History](./history) → *Fine-tune Tasks* tab.
+- Manage your models: [Model Management](./models).
+- Use the new model for inference: [Single Prediction](./predict) or [Batch Screening](./batch).
+- Review a past training run: [History](./history).

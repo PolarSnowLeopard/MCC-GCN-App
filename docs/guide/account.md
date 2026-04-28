@@ -1,37 +1,37 @@
 # Account & Language
 
-A short page covering the things in the corners of the UI.
+This page covers account-related features and the language preference.
 
 ## Language switcher
 
-Top-right corner of every page is a small button labelled `EN` or `中文`.
+A small toggle button is displayed in the upper-right corner of every page, labelled **`EN`** or **`中文`**.
 
-- Click it to flip the entire interface between English and Simplified Chinese.
-- Your choice is saved in your browser, so the next visit stays in the same language.
-- The platform's content is fully translated — there's no mixed-language state.
+- Clicking it switches the entire interface between English and Simplified Chinese.
+- The preference is persisted in browser local storage. Subsequent visits default to the last selected language.
+- All UI strings are fully translated; mixed-language states do not occur.
 
-::: tip
-This documentation site has its own language switcher (top-right of the docs nav bar). It is independent of the main app.
+::: info
+This documentation site has its own independent language switcher, located in the documentation navigation bar. It operates separately from the main application.
 :::
 
-## Sign out
+## Signing out
 
-Bottom of the sidebar, next to your username and avatar:
+At the bottom of the sidebar, next to your username and avatar, there is a **sign-out** icon (an outward-pointing arrow; it turns red on hover). Clicking it terminates your session and returns you to the sign-in page.
 
-- A small **arrow-out** icon (red on hover) signs you out and returns you to the login screen.
+## Forgotten password
 
-## Forgot your password
+The current version does not include a self-service password reset mechanism. If you forget your password:
 
-The platform doesn't expose a self-service password-reset page in the current version. If you forget your password:
+1. Contact your platform administrator.
+2. The administrator can reset the password from the server using a Django management command — see the [project README](https://github.com/PolarSnowLeopard/MCC-GCN-App#operations-cheatsheet) for the procedure.
 
-- Contact your administrator.
-- They can reset it from the server using a Django management command — see the [project README](https://github.com/PolarSnowLeopard/MCC-GCN-App#operations-cheatsheet) for the exact command.
+## User roles
 
-## Your role
+Your role is displayed beneath your username in the sidebar:
 
-Your role is shown under your username in the sidebar:
+| Role | Capabilities |
+| --- | --- |
+| **Researcher** | Full access to all workflows documented in this guide |
+| **Admin** | Same as Researcher, plus access to the Django administration panel at `/admin/` |
 
-- **Researcher** — the standard role. You can do everything documented in this guide.
-- **Admin** — the same as Researcher, plus access to the Django admin (`/admin/`). Most users won't have this.
-
-You cannot change your own role from the UI — your administrator manages this.
+Role assignment is managed by the administrator and cannot be changed from the UI.

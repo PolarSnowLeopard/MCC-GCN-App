@@ -1,51 +1,59 @@
 # Interface Tour
 
-A quick reference for every part of the UI.
+A reference for the application's layout and common UI elements.
 
 ## Layout
 
-The application has three regions:
+The interface is composed of three regions:
 
-| Region | Purpose |
-| --- | --- |
-| **Sidebar** (left, dark) | Workflow navigation + your account + sign-out button |
-| **Topbar** (top right) | Language switcher (`EN` / `中文`) |
-| **Main area** | The active workflow page |
-
-## Sidebar items
-
-| Icon | Label | Page |
+| Region | Location | Purpose |
 | --- | --- | --- |
-| 🧪 | Prediction | [Single Prediction](./predict) |
-| 📊 | Batch Screening | [Batch Screening](./batch) |
-| 🎯 | Fine-tuning | [Fine-tuning](./finetune) |
-| 🕘 | History | [History](./history) |
-| 📚 | Models | [Model Management](./models) |
+| **Sidebar** | Left, dark background | Workflow navigation, user information, sign-out |
+| **Topbar** | Upper right | Language switcher |
+| **Main area** | Centre | The active workflow page |
 
-The active page is highlighted in blue.
+## Sidebar navigation
+
+| Label | Destination |
+| --- | --- |
+| **Prediction** | [Single Prediction](./predict) |
+| **Batch Screening** | [Batch Screening](./batch) |
+| **Fine-tuning** | [Fine-tuning](./finetune) |
+| **History** | [History](./history) |
+| **Models** | [Model Management](./models) |
+| **User Guide** | Opens this documentation site in a new tab |
+
+The currently active page is indicated by a blue highlight.
 
 ## Sidebar footer
 
-At the bottom of the sidebar you'll see your **avatar** (first letter of your username), your **username**, and your role (`Researcher` or `Admin`). The arrow icon next to it is the **sign-out** button.
+The bottom of the sidebar displays:
 
-## Topbar
+- Your **avatar** (the first letter of your username)
+- Your **username** and **role** (`Researcher` or `Admin`)
+- A **sign-out** button (arrow icon; turns red on hover)
 
-Top right of every page:
+## Language switcher
 
-- **`EN` / `中文`** — switches the entire UI language at runtime. Your choice is remembered in your browser, so the next time you open the platform it stays in the language you picked.
+Located in the upper-right corner of every page:
+
+- **`EN` / `中文`** — toggles the entire interface between English and Simplified Chinese at runtime. The preference is persisted in browser local storage across sessions.
 
 ## Common page elements
 
-Most workflow pages share the same building blocks:
+Most workflow pages share the following building blocks:
 
-- **Page title** — the bold heading at the top.
-- **Page description** — the smaller line below the title.
-- **Content cards** — white panels with a subtle shadow, each holding one logical group (input / configuration / results).
-- **Action buttons** — primary actions are blue; destructive actions are red and always require confirmation.
+| Element | Description |
+| --- | --- |
+| **Page title** | Bold heading at the top of the main area |
+| **Page description** | Subtitle line providing brief context |
+| **Content cards** | White panels with subtle shadow; each groups one logical unit (input, configuration, or results) |
+| **Primary buttons** | Blue; trigger the main workflow action |
+| **Destructive buttons** | Red; always preceded by a confirmation dialog |
 
-Once you can identify these, every page works the same way: read the title → fill the cards → click the primary button → read the result.
+The general interaction pattern is consistent: read the heading, fill the card fields, click the primary button, review the output.
 
-## Where to go next
+## Next
 
-- [Single Prediction](./predict) — run your first prediction.
-- [Account & Language](./account) — change your language or sign out.
+- [Single Prediction](./predict) — your first hands-on workflow.
+- [Account & Language](./account) — language preference and sign-out details.

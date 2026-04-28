@@ -1,94 +1,98 @@
 # Model Management
 
-The **Models** page is your model library — every weight file you can use anywhere on the platform shows up here.
+The **Models** page serves as the central model library. Every weight file available for prediction — built-in, fine-tuned, or externally uploaded — is listed here.
 
-::: tip Reach the page
-Click 📚 **Models** in the sidebar.
+::: tip Navigation
+Select **Models** in the sidebar.
 :::
 
-## What you see
+## Model cards
 
-A grid of cards, one per model. Each card shows:
+Each model is presented as a card displaying:
 
-- A coloured letter badge — `P` for **Pretrained**, `F` for **Fine-tuned**.
-- The **model name** and a one-line **description**.
-- The **type** (`Pretrained` / `Fine-tuned`) and **number of classes**.
-- A **status tag**:
-  - `Built-in` (grey) — shipped with the platform, cannot be deleted.
-  - `Draft` (orange dashed border) — your own model, only visible to you.
-  - `Published` (green) — your own model, visible to other users.
-- **Created date**.
-- Per-card actions (when applicable): **Publish** and **Delete**.
+| Element | Description |
+| --- | --- |
+| **Letter badge** | `P` (Pretrained) or `F` (Fine-tuned), colour-coded |
+| **Name and description** | Free-text metadata set at creation time |
+| **Type** | `Pretrained` or `Fine-tuned` |
+| **Number of classes** | Output dimension of the model (default: 4) |
+| **Status** | `Built-in` (grey) · `Draft` (amber, dashed border) · `Published` (green) |
+| **Created date** | Timestamp |
+| **Actions** | **Publish** and/or **Delete**, when applicable |
 
 ## Visibility rules
 
-A model is shown to a user if **any** of these is true:
+A model is visible to a user if **any** of the following conditions holds:
 
-- It belongs to that user;
-- It is **built-in**;
-- It has been **published**.
+- The model belongs to that user.
+- The model is **built-in**.
+- The model has been **published**.
 
-That means:
+Implications:
 
-- Your *Draft* fine-tuned models are private to you until you publish them.
-- You cannot see other users' drafts.
-- Built-in models are visible to everyone.
+- Your *Draft* fine-tuned models are private until you publish them.
+- Other users' drafts are never visible to you.
+- Built-in models are visible to all users.
 
-## Common tasks
+## Common operations
 
-### Upload a model
+### Uploading a model
 
-If you have your own pretrained or fine-tuned `.pt` / `.pth` file (e.g. trained externally in PyTorch and following the project's `GCNNet` architecture):
+If you have an externally trained `.pt` or `.pth` weight file that is compatible with the project's `GCNNet` architecture:
 
-1. Click the **Upload Model** button (top right of the page).
-2. Fill the form:
-   | Field | Notes |
-   | --- | --- |
-   | **Model Name** | Required, free-form |
-   | **Description** | Optional |
-   | **Model Type** | `Pretrained` or `Fine-tuned` — required |
-   | **Classes** | Number of output classes the weights are trained for. Default `4`. |
-   | **Model File** | The `.pt` / `.pth` weight file (drag-drop or click) |
+1. Click **Upload Model** (upper-right corner).
+2. Complete the form:
+
+| Field | Notes |
+| --- | --- |
+| **Model Name** | Required |
+| **Description** | Optional |
+| **Model Type** | `Pretrained` or `Fine-tuned` (required) |
+| **Number of Classes** | Must match the model's output dimension; default `4` |
+| **Model File** | `.pt` or `.pth` file (drag-and-drop or file picker) |
+
 3. Click **Upload**.
 
-The new card appears as **Draft** and only you see it. Publish it from the card to share.
+The new model appears with **Draft** status, visible only to you.
 
-::: warning State-dict only
-The platform expects a **state dict** compatible with the project's `GCNNet` architecture (see [`backend/mcc_gcn/models/gcn.py`](https://github.com/PolarSnowLeopard/MCC-GCN-App/blob/main/backend/mcc_gcn/models/gcn.py)). Files saved with `torch.save(model, ...)` instead of `torch.save(model.state_dict(), ...)` will fail at load time.
+::: warning State-dict format required
+The platform expects a PyTorch **state dict** — the output of `torch.save(model.state_dict(), path)`. Files saved with `torch.save(model, path)` (which serialise the entire object) will fail at load time. The state dict must be compatible with the project's `GCNNet` architecture (see [`backend/mcc_gcn/models/gcn.py`](https://github.com/PolarSnowLeopard/MCC-GCN-App/blob/main/backend/mcc_gcn/models/gcn.py)).
 :::
 
-### Publish a model
+### Publishing a model
 
-To make a draft model visible to other users on the platform:
+To make a draft model accessible to all platform users:
 
-1. Find the card.
-2. Click the **Publish** action button.
-3. The badge flips from `Draft` to `Published`.
+1. Locate the model card.
+2. Click **Publish**.
+3. The status changes from `Draft` to `Published`.
 
-Publishing is one-way; if you want to make it private again, contact your administrator.
+::: info
+Publishing is a one-way operation in the current version. To revert a published model to draft status, contact your administrator.
+:::
 
-### Delete a model
+### Deleting a model
 
-For your own non-built-in models:
+For your own, non-built-in models:
 
-1. Click the **Delete** action button on the card.
-2. Confirm.
+1. Click **Delete** on the model card.
+2. Confirm the action.
 
 ::: warning
-- **Built-in models cannot be deleted** from the UI.
-- Deletion removes the weight file from server storage. Past predictions made with the model are still readable in [History](./history), but you won't be able to re-run them.
+- **Built-in models cannot be deleted.**
+- Deletion permanently removes the weight file from server storage. Prediction results produced by the deleted model remain accessible in [History](./history), but the model can no longer be used for new predictions.
 :::
 
-## Cards looking empty?
+## Empty state
 
-If you see the empty-state illustration (*"No models yet. Click the button above to upload."*), it means:
+If the model library appears empty, this indicates:
 
-- You don't have any of your own models yet, **and**
-- No built-in models exist (the administrator hasn't run `seed_builtin_model` yet).
+- You have no models of your own, **and**
+- No built-in models exist (the administrator has not run the `seed_builtin_model` management command).
 
-In a normal deployment you should always see at least the two built-in models. If not, please tell your administrator to run the seed step.
+Under normal deployment, at least two built-in models should be present. Contact your administrator if they are missing.
 
-## Where to go next
+## Next
 
-- Use a model right away: [Single Prediction](./predict).
-- Train your own: [Fine-tuning](./finetune).
+- Use a model immediately: [Single Prediction](./predict).
+- Create a new model: [Fine-tuning](./finetune).

@@ -15,12 +15,12 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(i18n)
-app.use(ElementPlus, { locale: elLocales[i18n.global.locale.value] || zhCn })
+app.use(ElementPlus, { locale: elLocales[i18n.global.locale.value] || en })
 
 watch(
   () => i18n.global.locale.value,
   (lang) => {
-    app.config.globalProperties.$ELEMENT = { locale: elLocales[lang] || zhCn }
+    app.config.globalProperties.$ELEMENT = { locale: elLocales[lang] || en }
   },
 )
 

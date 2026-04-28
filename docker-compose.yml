@@ -50,6 +50,9 @@ services:
     depends_on:
       - backend
 
+  docs:
+    build: ./docs
+
   nginx:
     image: nginx:alpine
     ports:
@@ -59,6 +62,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - docs
 
 volumes:
   pgdata:

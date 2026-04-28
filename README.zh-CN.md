@@ -8,7 +8,7 @@
 
 一个面向药物共晶研究的全栈式 AI 平台：从单分子对预测、批量虚拟筛选，到模型微调与版本管理，提供端到端的 Web 化解决方案。
 
-[English](./README.md) · [简体中文](./README.zh-CN.md)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · **[用户使用文档 →](http://localhost:8880/docs/)**（部署后访问）
 
 [![CI](https://img.shields.io/badge/CI-passing-success?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)

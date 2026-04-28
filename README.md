@@ -6,7 +6,7 @@
 
 A full-stack AI platform for cocrystal research — from single-pair prediction and high-throughput virtual screening, to model fine-tuning and version management, all delivered through a polished web UI.
 
-[English](./README.md) · [简体中文](./README.zh-CN.md)
+[English](./README.md) · [简体中文](./README.zh-CN.md) · **[User Guide →](http://localhost:8880/docs/)** (after deployment)
 
 [![CI](https://img.shields.io/badge/CI-passing-success?style=flat-square&logo=githubactions&logoColor=white)](./.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)

@@ -12,3 +12,8 @@ dist/
 
 *.log
 .DS_Store
+
+# TLS material (never commit real certificates / private keys)
+nginx/certs/*
+!nginx/certs/.gitkeep
+!nginx/certs/README.md

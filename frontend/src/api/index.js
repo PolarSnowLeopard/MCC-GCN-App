@@ -48,4 +48,5 @@ export const taskApi = {
   finetune: (formData) => api.post('/tasks/finetune/', formData),
   finetuneList: () => api.get('/tasks/finetune/list/'),
   finetuneDetail: (id) => api.get(`/tasks/finetune/${id}/`),
+  lookupSmiles: (q) => api.get('/tasks/lookup/smiles/', { params: { q } }),
 }

@@ -13,7 +13,33 @@ from .serializers import (
     FinetuneCreateSerializer,
 )
 from .services.predict import predict_single as run_predict
+from .services.lookup import resolve_smiles
 from .celery_tasks import run_batch_prediction, run_finetune
+
+
+@api_view(['GET'])
+def lookup_smiles(request):
+    """Resolve a chemical name or CAS number to a SMILES string.
+
+    Acts as a backend proxy that hides upstream churn (PubChem field rename,
+    CORS, regional access blocks) from the browser by trying several
+    upstream resolvers in turn.
+    """
+    query = (request.query_params.get('q') or '').strip()
+    if not query:
+        return Response(
+            {'detail': 'Missing ?q= parameter'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    smiles, source = resolve_smiles(query)
+    if not smiles:
+        return Response(
+            {'detail': 'Molecule not found in any upstream resolver',
+             'query': query},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    return Response({'query': query, 'smiles': smiles, 'source': source})
 
 
 @api_view(['POST'])

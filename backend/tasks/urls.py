@@ -5,6 +5,7 @@ urlpatterns = [
     path('predict/', views.predict_single),
     path('batch/', views.predict_batch),
     path('finetune/', views.finetune_create),
+    path('lookup/smiles/', views.lookup_smiles),
     path('', views.task_list),
     path('<int:pk>/', views.task_detail),
     path('finetune/list/', views.finetune_list),

@@ -201,7 +201,6 @@
 import { reactive, ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { modelApi, taskApi } from '../api'
-import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -295,10 +294,8 @@ async function lookupSmiles(target) {
   const loadingRef = target === 'api' ? apiLookupLoading : cfLookupLoading
   loadingRef.value = true
   try {
-    const { data } = await axios.get(
-      `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(query)}/property/CanonicalSMILES/JSON`
-    )
-    const smiles = data?.PropertyTable?.Properties?.[0]?.CanonicalSMILES
+    const { data } = await taskApi.lookupSmiles(query)
+    const smiles = data?.smiles
     if (!smiles) throw new Error('not found')
     if (target === 'api') form.api_smiles = smiles
     else form.coformer_smiles = smiles

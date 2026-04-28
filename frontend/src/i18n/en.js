@@ -5,6 +5,7 @@ export default {
     finetune: 'Fine-tuning',
     history: 'History',
     models: 'Models',
+    docs: 'User Guide',
   },
   common: {
     admin: 'Admin',

@@ -32,12 +32,15 @@ def _load_model(model_path, num_classes=4):
         return model
 
 
-def _build_pyg_data(smiles1, smiles2):
+def _build_pyg_data(smiles1, smiles2, pad_to=None):
     c1 = RDKitCoformer(smiles1, input_type='smiles')
     c2 = RDKitCoformer(smiles2, input_type='smiles')
     cc = Cocrystal(c1, c2)
     V = cc.VertexMatrix.feature_matrix()
     A = cc.CCGraphTensor(t_type='OnlyCovalentBond', hbond=False, pipi_stack=False, contact=False)
+
+    if pad_to is not None and V.shape[0] < pad_to:
+        V = np.pad(V, ((0, pad_to - V.shape[0]), (0, 0)), 'constant')
 
     x = torch.tensor(V, dtype=torch.float32)
     A_t = torch.tensor(A, dtype=torch.float32)
@@ -53,11 +56,13 @@ def _infer_single_direction(model, data):
         return F.softmax(output, dim=1).cpu().numpy()[0]
 
 
-def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4):
+def predict_single(
+    api_smiles, coformer_smiles, model_path=None, num_classes=4, pad_to=None,
+):
     model = _load_model(model_path, num_classes)
 
-    data_ab = _build_pyg_data(api_smiles, coformer_smiles)
-    data_ba = _build_pyg_data(coformer_smiles, api_smiles)
+    data_ab = _build_pyg_data(api_smiles, coformer_smiles, pad_to=pad_to)
+    data_ba = _build_pyg_data(coformer_smiles, api_smiles, pad_to=pad_to)
 
     probs_ab = _infer_single_direction(model, data_ab)
     probs_ba = _infer_single_direction(model, data_ba)
@@ -73,11 +78,17 @@ def predict_single(api_smiles, coformer_smiles, model_path=None, num_classes=4):
     }
 
 
-def predict_batch(pairs, model_path=None, num_classes=4):
+def predict_batch(pairs, model_path=None, num_classes=4, pad_to=None):
     results = []
     for p in pairs:
         try:
-            r = predict_single(p['api_smiles'], p['coformer_smiles'], model_path, num_classes)
+            r = predict_single(
+                p['api_smiles'],
+                p['coformer_smiles'],
+                model_path,
+                num_classes,
+                pad_to=pad_to,
+            )
         except Exception as e:
             r = {
                 'api_smiles': p['api_smiles'],

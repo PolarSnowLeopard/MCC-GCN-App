@@ -17,6 +17,18 @@ from .services.lookup import resolve_smiles
 from .celery_tasks import run_batch_prediction, run_finetune
 
 
+LEGACY_BUILTIN_PAD_TO = {
+    'pretrained': 178,
+    'finetuned': 70,
+}
+
+
+def _legacy_builtin_pad_to(model_obj):
+    if not model_obj.is_builtin:
+        return None
+    return LEGACY_BUILTIN_PAD_TO.get(model_obj.model_type)
+
+
 @api_view(['GET'])
 def lookup_smiles(request):
     """Resolve a chemical name or CAS number to a SMILES string.
@@ -56,6 +68,7 @@ def predict_single(request):
             data['coformer_smiles'],
             model_path=model_obj.model_file.path,
             num_classes=model_obj.num_classes,
+            pad_to=_legacy_builtin_pad_to(model_obj),
         )
     except (ValueError, TypeError, RuntimeError) as e:
         return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -98,6 +111,7 @@ def predict_batch(request):
         task.id,
         model_obj.model_file.path,
         model_obj.num_classes,
+        _legacy_builtin_pad_to(model_obj),
     )
     task.celery_task_id = celery_result.id
     task.save(update_fields=['celery_task_id'])

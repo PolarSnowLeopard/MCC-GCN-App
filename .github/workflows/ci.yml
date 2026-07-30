@@ -26,12 +26,12 @@ jobs:
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install torch_geometric rdkit
           pip install -r requirements.txt
-          pip install ruff
+          pip install ruff==0.15.17
 
       - name: Lint
         run: ruff check .
 
-      - name: Django check & migrate
+      - name: Django check, migrate & tests
         run: |
           python -c "
           import django, os
@@ -42,7 +42,8 @@ jobs:
           from django.core.management import call_command
           call_command('check')
           call_command('migrate', verbosity=0)
-          print('Django check + migrate OK')
+          call_command('test', 'tasks', verbosity=2)
+          print('Django check + migrate + tests OK')
           "
 
   frontend:

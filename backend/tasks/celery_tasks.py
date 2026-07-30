@@ -18,7 +18,8 @@ def run_batch_prediction(task_id, model_path, num_classes, pad_to=None):
             pad_to=pad_to,
         )
         task.result = results
-        task.status = 'completed'
+        all_failed = bool(results) and all(r.get('error') for r in results)
+        task.status = 'failed' if all_failed else 'completed'
         task.completed_at = timezone.now()
     except Exception as e:
         task.status = 'failed'

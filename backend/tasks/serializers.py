@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rdkit import Chem
+
 from .models import PredictionTask, FinetuneTask
 
 
@@ -15,10 +17,23 @@ class PredictionCreateSerializer(serializers.Serializer):
     coformer_smiles = serializers.CharField()
 
 
+def validate_smiles(value):
+    if Chem.MolFromSmiles(value) is None:
+        raise serializers.ValidationError('Invalid SMILES.')
+    return value
+
+
+class MoleculePairSerializer(serializers.Serializer):
+    api_smiles = serializers.CharField(validators=[validate_smiles])
+    coformer_smiles = serializers.CharField(validators=[validate_smiles])
+
+
 class BatchPredictionCreateSerializer(serializers.Serializer):
     model_id = serializers.IntegerField()
-    pairs = serializers.ListField(
-        child=serializers.DictField(child=serializers.CharField()),
+    pairs = MoleculePairSerializer(
+        many=True,
+        allow_empty=False,
+        max_length=1000,
     )
 
 

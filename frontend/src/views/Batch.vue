@@ -59,6 +59,23 @@
         <el-button type="primary" :loading="submitting" :disabled="polling" @click="handleSubmit" style="height:44px;font-size:15px">
           {{ $t('batch.startScreen') }}
         </el-button>
+
+        <el-alert
+          v-if="validationErrors.length"
+          class="validation-alert"
+          type="error"
+          :closable="false"
+          show-icon
+        >
+          <template #title>
+            {{ $t('batch.validationTitle', { count: validationErrors.length }) }}
+          </template>
+          <ul class="validation-list">
+            <li v-for="(error, index) in validationErrors" :key="`${error.row}-${error.field}-${index}`">
+              {{ $t('batch.rowLabel', { row: error.row }) }}: {{ error.message }}
+            </li>
+          </ul>
+        </el-alert>
       </el-form>
     </div>
 
@@ -77,7 +94,11 @@
 
     <div class="content-card" v-if="results.length">
       <div style="display:flex;justify-content:space-between;align-items:center" class="card-title">
-        <span>{{ $t('batch.title') }} <el-tag round size="small" type="info">{{ $t('batch.resultCount', { count: results.length }) }}</el-tag></span>
+        <span class="result-summary">
+          {{ $t('batch.title') }}
+          <el-tag round size="small" type="success">{{ $t('batch.successCount', { count: successCount }) }}</el-tag>
+          <el-tag v-if="failureCount" round size="small" type="danger">{{ $t('batch.failureCount', { count: failureCount }) }}</el-tag>
+        </span>
         <el-button size="small" @click="exportCSV">{{ $t('common.export') }}</el-button>
       </div>
       <el-table :data="results" stripe style="width: 100%" :header-cell-style="{background:'#f8fafc'}" :row-class-name="rowClassName">
@@ -86,7 +107,10 @@
         <el-table-column prop="coformer_smiles" label="Coformer SMILES" min-width="200" show-overflow-tooltip />
         <el-table-column :label="$t('batch.prediction')" width="120" align="center">
           <template #default="{ row }">
-            <el-tag :color="CLASS_COLORS[row.prediction]" style="color:#fff;border:none" size="small" round>
+            <el-tag v-if="row.error" type="danger" size="small" round>
+              {{ $t('batch.invalidRow') }}
+            </el-tag>
+            <el-tag v-else :color="CLASS_COLORS[row.prediction]" style="color:#fff;border:none" size="small" round>
               {{ CLASS_LABELS[row.prediction] }}
             </el-tag>
           </template>
@@ -94,6 +118,11 @@
         <el-table-column :label="$t('batch.confidenceCol')" width="100" align="center">
           <template #default="{ row }">
             <span style="font-weight:600">{{ row.probabilities ? (Math.max(...row.probabilities) * 100).toFixed(1) + '%' : '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column v-if="failureCount" prop="error" :label="$t('batch.errorDetails')" min-width="240" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="row-error-message">{{ row.error || '-' }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -106,6 +135,7 @@ import { reactive, ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
+import Papa from 'papaparse'
 import { modelApi, taskApi } from '../api'
 
 const { t } = useI18n()
@@ -116,7 +146,10 @@ const inputMode = ref('text')
 const csvFile = ref(null)
 const submitting = ref(false)
 const results = ref([])
+const validationErrors = ref([])
 const form = reactive({ model_id: '', pairsText: '' })
+const successCount = computed(() => results.value.filter(row => !row.error).length)
+const failureCount = computed(() => results.value.filter(row => row.error).length)
 
 const polling = ref(false)
 const taskStatus = ref('')
@@ -136,6 +169,7 @@ const CLASS_LABELS = ['Negative', 'Salt', 'Cocrystal', 'Solvate']
 const ROW_BG = ['rgba(148,163,184,0.08)', 'rgba(245,158,11,0.08)', 'rgba(34,197,94,0.08)', 'rgba(59,130,246,0.08)']
 
 function rowClassName({ row }) {
+  if (row.error) return 'row-error'
   const cls = row.prediction
   if (cls === 0) return 'row-class-0'
   if (cls === 1) return 'row-class-1'
@@ -144,23 +178,87 @@ function rowClassName({ row }) {
   return ''
 }
 
-function parsePairsFromText(text) {
-  return text.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
-    const [api_smiles, coformer_smiles] = l.split(',').map(s => s.trim())
-    return { api_smiles, coformer_smiles }
-  }).filter(p => p.api_smiles && p.coformer_smiles)
+function parsePairs(text) {
+  const parsed = Papa.parse(text.replace(/^\uFEFF/, ''), {
+    skipEmptyLines: 'greedy',
+  })
+  const rows = parsed.data
+  const hasHeader = rows.length > 0 && rows[0].some(cell => /smiles/i.test(String(cell)))
+  const start = hasHeader ? 1 : 0
+  const pairs = []
+  const rowNumbers = []
+  const errors = parsed.errors.map(error => ({
+    row: error.row + 1,
+    field: 'csv',
+    message: error.message,
+  }))
+
+  rows.slice(start).forEach((row, index) => {
+    const rowNumber = start + index + 1
+    if (row.length !== 2) {
+      errors.push({
+        row: rowNumber,
+        field: 'csv',
+        message: t('batch.invalidColumnCount'),
+      })
+      return
+    }
+
+    const [apiSmiles, coformerSmiles] = row.map(cell => String(cell).trim())
+    if (!apiSmiles || !coformerSmiles) {
+      errors.push({
+        row: rowNumber,
+        field: 'csv',
+        message: t('batch.emptySmiles'),
+      })
+      return
+    }
+
+    pairs.push({
+      api_smiles: apiSmiles,
+      coformer_smiles: coformerSmiles,
+    })
+    rowNumbers.push(rowNumber)
+  })
+
+  return { pairs, rowNumbers, errors }
 }
 
-function handleFileChange(file) { csvFile.value = file.raw }
+function handleFileChange(file) {
+  csvFile.value = file.raw
+  validationErrors.value = []
+}
 
 async function parsePairsFromFile(file) {
-  const text = await file.text()
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-  const start = /smiles/i.test(lines[0]) ? 1 : 0
-  return lines.slice(start).map(l => {
-    const [a, c] = l.split(',').map(s => s.trim())
-    return { api_smiles: a, coformer_smiles: c }
-  }).filter(p => p.api_smiles && p.coformer_smiles)
+  return parsePairs(await file.text())
+}
+
+function extractPairErrors(data, rowNumbers) {
+  if (!Array.isArray(data?.pairs)) return []
+  const errors = []
+  data.pairs.forEach((rowErrors, index) => {
+    if (!rowErrors || typeof rowErrors !== 'object') return
+    Object.entries(rowErrors).forEach(([field, messages]) => {
+      const values = Array.isArray(messages) ? messages : [messages]
+      values.forEach(message => {
+        errors.push({
+          row: rowNumbers[index] || index + 1,
+          field,
+          message: `${field === 'api_smiles' ? 'API SMILES' : 'Coformer SMILES'}: ${message}`,
+        })
+      })
+    })
+  })
+  return errors
+}
+
+function getErrorMessage(data) {
+  if (typeof data === 'string') return data
+  if (Array.isArray(data)) return getErrorMessage(data[0])
+  if (data && typeof data === 'object') {
+    return getErrorMessage(data.detail || data.error || Object.values(data)[0])
+  }
+  return t('batch.screenFailed')
 }
 
 function downloadTemplate() {
@@ -206,14 +304,20 @@ function startPolling(taskId) {
         pollProgress.value = 100
         stopPolling()
         results.value = Array.isArray(data.result || data.results) ? (data.result || data.results) : []
-        ElMessage.success(t('batch.screenSuccess'))
+        const failed = results.value.filter(row => row.error).length
+        ElMessage[failed ? 'warning' : 'success'](
+          failed
+            ? t('batch.screenPartial', { success: results.value.length - failed, failed })
+            : t('batch.screenSuccess'),
+        )
       } else if (data.status === 'failed') {
         stopPolling()
-        ElMessage.error(data.error || t('batch.screenFailed'))
+        results.value = Array.isArray(data.result) ? data.result : []
+        ElMessage.error(getErrorMessage(data.result || data))
       }
-    } catch {
+    } catch (error) {
       stopPolling()
-      ElMessage.error(t('batch.screenFailed'))
+      ElMessage.error(getErrorMessage(error.response?.data))
     }
   }, 3000)
 }
@@ -221,15 +325,25 @@ function startPolling(taskId) {
 async function handleSubmit() {
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
-  let pairs = inputMode.value === 'text'
-    ? parsePairsFromText(form.pairsText)
-    : csvFile.value ? await parsePairsFromFile(csvFile.value) : []
-  if (!pairs.length) { ElMessage.warning(t('batch.atLeastOne')); return }
+  validationErrors.value = []
+  const parsed = inputMode.value === 'text'
+    ? parsePairs(form.pairsText)
+    : csvFile.value
+      ? await parsePairsFromFile(csvFile.value)
+      : { pairs: [], rowNumbers: [], errors: [] }
+  if (parsed.errors.length) {
+    validationErrors.value = parsed.errors
+    return
+  }
+  if (!parsed.pairs.length) { ElMessage.warning(t('batch.atLeastOne')); return }
 
   submitting.value = true
   results.value = []
   try {
-    const { data } = await taskApi.batchPredict({ model_id: form.model_id, pairs })
+    const { data } = await taskApi.batchPredict({
+      model_id: form.model_id,
+      pairs: parsed.pairs,
+    })
     if (data.task_id && data.status === 'pending') {
       ElMessage.info(t('batch.taskSubmitted'))
       startPolling(data.task_id)
@@ -238,18 +352,28 @@ async function handleSubmit() {
       ElMessage.success(t('batch.screenSuccess'))
     }
   } catch (e) {
-    ElMessage.error(e.response?.data?.detail || t('batch.screenFailed'))
+    const pairErrors = extractPairErrors(e.response?.data, parsed.rowNumbers)
+    if (pairErrors.length) {
+      validationErrors.value = pairErrors
+      ElMessage.error(t('batch.validationFailed'))
+    } else {
+      ElMessage.error(getErrorMessage(e.response?.data))
+    }
   } finally {
     submitting.value = false
   }
 }
 
 function exportCSV() {
-  const header = 'API SMILES,Coformer SMILES,Prediction,Label,Confidence'
-  const rows = results.value.map(r =>
-    `"${r.api_smiles}","${r.coformer_smiles}",${r.prediction},${CLASS_LABELS[r.prediction]},${r.probabilities ? (Math.max(...r.probabilities) * 100).toFixed(1) + '%' : ''}`
-  )
-  const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const csv = Papa.unparse(results.value.map(row => ({
+    api_smiles: row.api_smiles,
+    coformer_smiles: row.coformer_smiles,
+    prediction: row.error ? '' : row.prediction,
+    label: row.error ? '' : CLASS_LABELS[row.prediction],
+    confidence: row.probabilities ? `${(Math.max(...row.probabilities) * 100).toFixed(1)}%` : '',
+    error: row.error || '',
+  })))
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = 'batch_results.csv'
@@ -340,8 +464,23 @@ onBeforeUnmount(() => { stopPolling() })
 }
 .poll-text .is-loading { font-size: 16px; }
 
+.validation-alert { margin-top: 16px; }
+.validation-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  line-height: 1.7;
+}
+.result-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.row-error-message { color: #dc2626; }
+
 :deep(.row-class-0 td) { background: rgba(148,163,184,0.06) !important; }
 :deep(.row-class-1 td) { background: rgba(245,158,11,0.06) !important; }
 :deep(.row-class-2 td) { background: rgba(34,197,94,0.06) !important; }
 :deep(.row-class-3 td) { background: rgba(59,130,246,0.06) !important; }
+:deep(.row-error td) { background: rgba(239,68,68,0.06) !important; }
 </style>

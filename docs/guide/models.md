@@ -6,6 +6,13 @@ The **Models** page serves as the central model library. Every weight file avail
 Select **Models** in the sidebar.
 :::
 
+## Built-in models
+
+| Name | Purpose |
+| --- | --- |
+| `MCC-GCN 4-Class Pretrain v2` | Four-class model trained on the pretraining dataset |
+| `MCC-GCN 4-Class Finetune Exp+Minoxidil v1` | Four-class model fine-tuned on experimental and Minoxidil data |
+
 ## Model cards
 
 Each model is presented as a card displaying:

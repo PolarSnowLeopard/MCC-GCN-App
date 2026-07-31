@@ -6,6 +6,13 @@
 在侧边栏选择 **模型**。
 :::
 
+## 内置模型
+
+| 名称 | 用途 |
+| --- | --- |
+| `MCC-GCN 4-Class Pretrain v2` | 使用预训练数据训练的四分类模型 |
+| `MCC-GCN 4-Class Finetune Exp+Minoxidil v1` | 使用实验数据与 Minoxidil 数据微调的四分类模型 |
+
 ## 模型卡片
 
 每个模型以卡片形式呈现，包含以下信息：

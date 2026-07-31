@@ -23,17 +23,20 @@ Each row contains:
 
 | Column | Description |
 | --- | --- |
+| **ID** | Task identifier |
 | **Type** | `Single` or `Batch` |
 | **Status** | `Queued` · `Running` · `Completed` · `Failed` |
 | **Created At** | Submission timestamp |
 | **Detail** | Opens the result panel |
 
-Clicking **Detail** reopens the full result:
+Clicking **Detail** opens the saved input and result:
 
-- **Single** predictions show the four-class probability distribution, both SMILES, and the model used — identical to what was displayed on the Prediction page at run time.
-- **Batch** predictions show the complete results table with colour-coded class tags.
+- **Single** predictions show the API, Coformer, predicted class, and the four-class probability distribution.
+- **Batch** predictions show every API and Coformer pair together with its predicted class and confidence.
+- If an input row failed, its failure reason is shown in the batch table.
+- Inputs remain visible while a task is queued or when a task fails.
 
-A type filter at the top of the list allows you to display only Single or only Batch tasks.
+Completed batch results can be downloaded with **Export CSV**. The export contains the API, Coformer, prediction, class label, confidence, and any failure reason.
 
 ## Fine-tune Tasks
 
@@ -44,9 +47,9 @@ Each row contains:
 | **Task Name** | The name assigned at submission |
 | **Status** | `Queued` · `Running` · `Completed` · `Failed` |
 | **Created At** | Submission timestamp |
-| **Detail** | Opens the training log and action buttons |
+| **Detail** | Opens the saved task information and current status |
 
-The detail view provides the per-epoch training log and the same **Test Model** / **Publish Model** actions available on the [Fine-tuning](./finetune) page.
+Use the [Fine-tuning](./finetune) page to test or publish a completed fine-tuned model.
 
 ## Notes
 

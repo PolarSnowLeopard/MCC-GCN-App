@@ -435,8 +435,8 @@ input(34) → GCNConv→256 → GCNConv→256 → GCNConv→128
 
 | 名称 | 类型 | 说明 |
 | --- | --- | --- |
-| `MCC-GCN Pretrained v1` | `pretrained` | CSD 预训练基座，适合作为微调起点 |
-| `MCC-GCN v1` | `finetuned` | 经过领域微调的最终模型，开箱可用 |
+| `MCC-GCN 4-Class Pretrain v2` | `pretrained` | 使用 CSD 数据训练的四分类预训练模型 |
+| `MCC-GCN 4-Class Finetune Exp+Minoxidil v1` | `finetuned` | 使用实验数据与 Minoxidil 数据微调的四分类模型 |
 
 ---
 

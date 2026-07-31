@@ -21,11 +21,11 @@ The page is divided into two columns:
 
 The **Select Model** dropdown lists every model visible to your account:
 
-- Built-in models (e.g. `MCC-GCN Pretrained v2`, `MCC-GCN v1`)
+- Built-in models (e.g. `MCC-GCN 4-Class Pretrain v2`, `MCC-GCN 4-Class Finetune Exp+Minoxidil v1`)
 - Your own fine-tuned models
 - Models published by other users
 
-Each entry carries a tag: `Pretrained` (blue) or `Fine-tuned` (green). For routine inference, **`MCC-GCN v1`** — the production fine-tuned model — is recommended.
+Each entry carries a tag: `Pretrained` (blue) or `Fine-tuned` (green). For routine inference, select the model whose training stage and data type match the intended evaluation.
 
 ::: info
 If no model is selected, the platform automatically selects the built-in fine-tuned model when you click **Predict**.

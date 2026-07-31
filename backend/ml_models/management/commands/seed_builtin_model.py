@@ -13,7 +13,7 @@ FIXTURE_DIR = Path(settings.BASE_DIR) / 'fixtures'
 
 BUILTIN_MODELS = [
     {
-        'name': 'MCC-GCN Pretrained v2',
+        'name': 'MCC-GCN 4-Class Pretrain v2',
         'description': (
             '基于修复后的 CSD 数据处理与分子对隔离划分训练的四分类基础模型，'
             '适用于域内预测和后续微调。'
@@ -34,8 +34,8 @@ BUILTIN_MODELS = [
         },
     },
     {
-        'name': 'MCC-GCN v1',
-        'description': '在预训练基础上经过领域微调的最终模型，具备最佳预测性能，可直接用于共晶筛选。',
+        'name': 'MCC-GCN 4-Class Finetune Exp+Minoxidil v1',
+        'description': '在预训练基础上使用实验数据与 Minoxidil 数据微调的四分类模型。',
         'model_type': 'finetuned',
         'num_classes': 4,
         'is_builtin': True,

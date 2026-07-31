@@ -21,11 +21,11 @@
 
 **选择模型**下拉菜单列出当前账号可见的所有模型：
 
-- 内置模型（如 `MCC-GCN Pretrained v2`、`MCC-GCN v1`）
+- 内置模型（如 `MCC-GCN 4-Class Pretrain v2`、`MCC-GCN 4-Class Finetune Exp+Minoxidil v1`）
 - 你自己的微调模型
 - 其他用户已发布的模型
 
-每个条目带有标签：`Pretrained`（蓝色）或 `Fine-tuned`（绿色）。日常推理推荐使用 **`MCC-GCN v1`**（生产级微调模型）。
+每个条目带有标签：`Pretrained`（蓝色）或 `Fine-tuned`（绿色）。请根据所需训练阶段和数据类型选择模型。
 
 ::: info
 若未选择模型，点击 **预测** 时平台将自动选择内置微调模型。

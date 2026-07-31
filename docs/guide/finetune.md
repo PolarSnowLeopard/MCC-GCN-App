@@ -57,7 +57,7 @@ Complete the form on the left:
 
 | Field | Description |
 | --- | --- |
-| **Base Model** | The model to initialise from. The built-in **MCC-GCN Pretrained v2** is the standard choice. |
+| **Base Model** | The model to initialise from. The built-in **MCC-GCN 4-Class Pretrain v2** is the standard choice. |
 | **Task Name** | A descriptive identifier (e.g. `api-screening-2026-04`). The resulting model file inherits this name. |
 | **Training Data** | Upload your CSV via drag-and-drop or file picker. |
 

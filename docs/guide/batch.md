@@ -17,7 +17,7 @@ Select **Batch Screening** in the sidebar.
 
 ### 1. Select a model
 
-The model dropdown is shared with the Prediction page. All models visible to your account are listed. The built-in `MCC-GCN v1` is recommended for general use.
+The model dropdown is shared with the Prediction page. All models visible to your account are listed. Select the model whose training stage and data type match the intended evaluation.
 
 ### 2. Provide the input data
 

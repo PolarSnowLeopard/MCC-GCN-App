@@ -51,7 +51,7 @@ class SeedBuiltinModelTests(TestCase):
             source.write_bytes(b'validated checkpoint')
             expected_sha256 = hashlib.sha256(source.read_bytes()).hexdigest()
             definition = {
-                'name': 'MCC-GCN Pretrained v2',
+                'name': 'MCC-GCN 4-Class Pretrain v2',
                 'description': 'corrected',
                 'model_type': 'pretrained',
                 'num_classes': 4,
@@ -84,7 +84,10 @@ class SeedBuiltinModelTests(TestCase):
                 call_command('seed_builtin_model')
 
             existing.refresh_from_db()
-            self.assertEqual(existing.name, 'MCC-GCN Pretrained v2')
+            self.assertEqual(
+                existing.name,
+                'MCC-GCN 4-Class Pretrain v2',
+            )
             self.assertEqual(
                 existing.model_file.name,
                 'models/candidate.pth',

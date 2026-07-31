@@ -10,6 +10,7 @@ from rdkit import Chem, RDConfig
 from rdkit.Chem import AllChem, ChemicalFeatures, rdmolops
 
 from .bond import Bond
+from .valence import get_atom_valence
 
 _FDEF_PATH = os.path.join(RDConfig.RDDataDir, 'BaseFeatures.fdef')
 _FEATURE_FACTORY = ChemicalFeatures.BuildFeatureFactory(_FDEF_PATH)
@@ -56,8 +57,8 @@ class _AtomFeatures:
         self.chirality = cip
         self.is_chiral = cip != ''
 
-        self.explicitvalence = rdkit_atom.GetExplicitValence()
-        self.implicitvalence = rdkit_atom.GetImplicitValence()
+        self.explicitvalence = get_atom_valence(rdkit_atom, 'EXPLICIT')
+        self.implicitvalence = get_atom_valence(rdkit_atom, 'IMPLICIT')
         self.totalnumHs = rdkit_atom.GetTotalNumHs()
         self.formalcharge = rdkit_atom.GetFormalCharge()
         self.radical_electrons = rdkit_atom.GetNumRadicalElectrons()
@@ -107,26 +108,40 @@ def _get_edges(rdkit_mol):
     return edges
 
 
-def _mol_from_smiles(smiles):
+def _mol_from_smiles(smiles, coordinate_mode):
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         raise ValueError(f"Invalid SMILES: {smiles}")
     mol = Chem.AddHs(mol)
-    params = AllChem.ETKDGv3()
-    params.randomSeed = 42
-    if AllChem.EmbedMolecule(mol, params) != 0:
-        if AllChem.EmbedMolecule(mol, randomSeed=42) != 0:
-            raise ValueError(f"Failed to generate 3D conformer: {smiles}")
-    AllChem.MMFFOptimizeMolecule(mol)
+    if coordinate_mode == '2d':
+        AllChem.Compute2DCoords(mol)
+    elif coordinate_mode == '3d':
+        params = AllChem.ETKDGv3()
+        params.randomSeed = 42
+        if AllChem.EmbedMolecule(mol, params) != 0:
+            if AllChem.EmbedMolecule(mol, randomSeed=42) != 0:
+                raise ValueError(f"Failed to generate 3D conformer: {smiles}")
+        if AllChem.MMFFHasAllMoleculeParams(mol):
+            AllChem.MMFFOptimizeMolecule(mol)
+        elif AllChem.UFFHasAllMoleculeParams(mol):
+            AllChem.UFFOptimizeMolecule(mol)
+    else:
+        raise ValueError("coordinate_mode must be '2d' or '3d'")
     return mol
 
 
 class RDKitCoformer:
     """Pure RDKit Coformer. Accepts SMILES, SDF file path, or mol block."""
 
-    def __init__(self, input_data, input_type='smiles', name=None):
+    def __init__(
+        self,
+        input_data,
+        input_type='smiles',
+        name=None,
+        coordinate_mode='3d',
+    ):
         if input_type == 'smiles':
-            self.rdkit_mol = _mol_from_smiles(input_data)
+            self.rdkit_mol = _mol_from_smiles(input_data, coordinate_mode)
             self.molname = name or input_data
         elif input_type == 'sdf':
             self.rdkit_mol = AllChem.MolFromMolFile(input_data, removeHs=False)

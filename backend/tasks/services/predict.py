@@ -18,23 +18,40 @@ _model_cache = {}
 _cache_lock = threading.Lock()
 
 
-def _load_model(model_path, num_classes=4):
+def _load_model(model_path, num_classes=4, model_size='large'):
+    cache_key = (model_path, num_classes, model_size)
     with _cache_lock:
-        if model_path in _model_cache:
-            return _model_cache[model_path]
+        if cache_key in _model_cache:
+            return _model_cache[cache_key]
         device = torch.device('cpu')
-        model = GCNNet(num_classes=num_classes).to(device)
+        model = GCNNet(
+            num_classes=num_classes,
+            model_size=model_size,
+        ).to(device)
         state = torch.load(model_path, map_location=device, weights_only=True)
         model.load_state_dict(state)
         model.eval()
-        _model_cache[model_path] = model
-        logger.info("Loaded model %s (classes=%d)", model_path, num_classes)
+        _model_cache[cache_key] = model
+        logger.info(
+            'Loaded model %s (classes=%d, size=%s)',
+            model_path,
+            num_classes,
+            model_size,
+        )
         return model
 
 
 def _build_pyg_data(smiles1, smiles2, pad_to=None):
-    c1 = RDKitCoformer(smiles1, input_type='smiles')
-    c2 = RDKitCoformer(smiles2, input_type='smiles')
+    c1 = RDKitCoformer(
+        smiles1,
+        input_type='smiles',
+        coordinate_mode='2d',
+    )
+    c2 = RDKitCoformer(
+        smiles2,
+        input_type='smiles',
+        coordinate_mode='2d',
+    )
     cc = Cocrystal(c1, c2)
     V = cc.VertexMatrix.feature_matrix()
     A = cc.CCGraphTensor(t_type='OnlyCovalentBond', hbond=False, pipi_stack=False, contact=False)
@@ -57,9 +74,10 @@ def _infer_single_direction(model, data):
 
 
 def predict_single(
-    api_smiles, coformer_smiles, model_path=None, num_classes=4, pad_to=None,
+    api_smiles, coformer_smiles, model_path=None, num_classes=4,
+    pad_to=None, model_size='large',
 ):
-    model = _load_model(model_path, num_classes)
+    model = _load_model(model_path, num_classes, model_size)
 
     data_ab = _build_pyg_data(api_smiles, coformer_smiles, pad_to=pad_to)
     data_ba = _build_pyg_data(coformer_smiles, api_smiles, pad_to=pad_to)
@@ -78,7 +96,9 @@ def predict_single(
     }
 
 
-def predict_batch(pairs, model_path=None, num_classes=4, pad_to=None):
+def predict_batch(
+    pairs, model_path=None, num_classes=4, pad_to=None, model_size='large',
+):
     results = []
     for p in pairs:
         try:
@@ -88,6 +108,7 @@ def predict_batch(pairs, model_path=None, num_classes=4, pad_to=None):
                 model_path,
                 num_classes,
                 pad_to=pad_to,
+                model_size=model_size,
             )
         except Exception as e:
             r = {

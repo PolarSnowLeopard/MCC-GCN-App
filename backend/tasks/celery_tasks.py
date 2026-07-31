@@ -3,7 +3,9 @@ from django.utils import timezone
 
 
 @shared_task
-def run_batch_prediction(task_id, model_path, num_classes, pad_to=None):
+def run_batch_prediction(
+    task_id, model_path, num_classes, pad_to=None, model_size='large',
+):
     from .models import PredictionTask
     from .services.predict import predict_batch
 
@@ -16,6 +18,7 @@ def run_batch_prediction(task_id, model_path, num_classes, pad_to=None):
             model_path=model_path,
             num_classes=num_classes,
             pad_to=pad_to,
+            model_size=model_size,
         )
         task.result = results
         all_failed = bool(results) and all(r.get('error') for r in results)
@@ -48,6 +51,10 @@ def run_finetune(task_id):
         config = {
             **task.config,
             'num_classes': base_model.num_classes,
+            'model_size': base_model.inference_config.get(
+                'model_size',
+                'large',
+            ),
             'train_layers': task.config.get('train_layers', 3),
             'weight_decay': task.config.get('weight_decay', 0.3),
         }
@@ -66,6 +73,7 @@ def run_finetune(task_id):
             model_type='finetuned',
             base_model=base_model,
             num_classes=base_model.num_classes,
+            inference_config=base_model.inference_config,
             status='draft',
         )
         new_model.model_file.name = f'models/{output_filename}'

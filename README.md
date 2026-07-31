@@ -433,7 +433,7 @@ You can unfreeze only the last N dense layers (`train_layers ∈ {1, 2, 3, all}`
 
 | Name | Type | Notes |
 | --- | --- | --- |
-| `MCC-GCN Pretrained v1` | `pretrained` | CSD-pretrained backbone, ideal as a fine-tuning starting point |
+| `MCC-GCN Pretrained v2` | `pretrained` | Corrected CSD-pretrained backbone with pair-disjoint validation and model-specific inference |
 | `MCC-GCN v1` | `finetuned` | Domain-fine-tuned production model, ready to use |
 
 ---

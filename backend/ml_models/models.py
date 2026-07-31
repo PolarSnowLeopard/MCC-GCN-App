@@ -21,6 +21,7 @@ class MLModel(models.Model):
     model_file = models.FileField(upload_to='models/')
     is_builtin = models.BooleanField(default=False)
     num_classes = models.IntegerField(default=4)
+    inference_config = models.JSONField(default=dict, blank=True)
     status = models.CharField(
         max_length=20,
         choices=[('draft', 'Draft'), ('published', 'Published')],

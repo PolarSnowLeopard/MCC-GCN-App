@@ -21,7 +21,7 @@ The page is divided into two columns:
 
 The **Select Model** dropdown lists every model visible to your account:
 
-- Built-in models (e.g. `MCC-GCN Pretrained v1`, `MCC-GCN v1`)
+- Built-in models (e.g. `MCC-GCN Pretrained v2`, `MCC-GCN v1`)
 - Your own fine-tuned models
 - Models published by other users
 

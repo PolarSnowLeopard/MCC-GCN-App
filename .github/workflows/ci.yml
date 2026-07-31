@@ -23,8 +23,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install torch_geometric rdkit
+          pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install torch_geometric==2.8.0 rdkit==2025.9.2
           pip install -r requirements.txt
           pip install ruff==0.15.17
 
@@ -42,7 +42,7 @@ jobs:
           from django.core.management import call_command
           call_command('check')
           call_command('migrate', verbosity=0)
-          call_command('test', 'tasks', verbosity=2)
+          call_command('test', 'users', 'ml_models', 'tasks', verbosity=2)
           print('Django check + migrate + tests OK')
           "
 

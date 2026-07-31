@@ -16,8 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 def _build_labeled_data(api_smiles, coformer_smiles, label):
-    c1 = RDKitCoformer(api_smiles, input_type='smiles')
-    c2 = RDKitCoformer(coformer_smiles, input_type='smiles')
+    c1 = RDKitCoformer(
+        api_smiles,
+        input_type='smiles',
+        coordinate_mode='2d',
+    )
+    c2 = RDKitCoformer(
+        coformer_smiles,
+        input_type='smiles',
+        coordinate_mode='2d',
+    )
     cc = Cocrystal(c1, c2)
     V = cc.VertexMatrix.feature_matrix()
     A = cc.CCGraphTensor(t_type='OnlyCovalentBond', hbond=False, pipi_stack=False, contact=False)
@@ -67,6 +75,7 @@ def run_finetune(base_model_path, csv_path, output_path, config, progress_callba
     lr = config.get('learning_rate', 3e-4)
     weight_decay = config.get('weight_decay', 0.3)
     train_layers = config.get('train_layers', 3)
+    model_size = config.get('model_size', 'large')
 
     dataset, parse_errors = parse_training_csv(csv_path)
     if len(dataset) < 2:
@@ -83,11 +92,16 @@ def run_finetune(base_model_path, csv_path, output_path, config, progress_callba
                               drop_last=(len(train_data) > batch_size))
     val_loader = DataLoader(val_data, batch_size=256, shuffle=False)
 
-    model = GCNNet(num_classes=num_classes).to(device)
+    model = GCNNet(
+        num_classes=num_classes,
+        model_size=model_size,
+    ).to(device)
     model.load_state_dict(torch.load(base_model_path, map_location=device, weights_only=True))
     model.ft_setting(train_dense_layer=train_layers)
 
-    class_weights = torch.FloatTensor([1, 1, 1, 2]).to(device)
+    class_weights = torch.ones(num_classes, dtype=torch.float32, device=device)
+    if num_classes == 4:
+        class_weights[-1] = 2
     criterion = nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()),

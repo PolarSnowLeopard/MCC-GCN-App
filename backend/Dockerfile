@@ -6,8 +6,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev gcc g++ && \
     rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir torch_geometric rdkit
+RUN pip install --no-cache-dir torch==2.10.0 \
+    --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir \
+    torch_geometric==2.8.0 \
+    rdkit==2025.9.2
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

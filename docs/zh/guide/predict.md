@@ -21,7 +21,7 @@
 
 **选择模型**下拉菜单列出当前账号可见的所有模型：
 
-- 内置模型（如 `MCC-GCN Pretrained v1`、`MCC-GCN v1`）
+- 内置模型（如 `MCC-GCN Pretrained v2`、`MCC-GCN v1`）
 - 你自己的微调模型
 - 其他用户已发布的模型
 

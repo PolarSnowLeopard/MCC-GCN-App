@@ -26,4 +26,5 @@ jobs:
             docker compose up -d
             docker compose exec -T backend python manage.py migrate --noinput
             docker compose exec -T backend python manage.py seed_builtin_model
+            docker compose restart backend celery
             docker image prune -f

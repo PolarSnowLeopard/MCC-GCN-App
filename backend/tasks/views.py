@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from ml_models.inference import resolve_inference_config
 from ml_models.models import MLModel
 from .models import PredictionTask, FinetuneTask
 from .serializers import (
@@ -15,18 +16,6 @@ from .serializers import (
 from .services.predict import predict_single as run_predict
 from .services.lookup import resolve_smiles
 from .celery_tasks import run_batch_prediction, run_finetune
-
-
-LEGACY_BUILTIN_PAD_TO = {
-    'pretrained': 178,
-    'finetuned': 70,
-}
-
-
-def _legacy_builtin_pad_to(model_obj):
-    if not model_obj.is_builtin:
-        return None
-    return LEGACY_BUILTIN_PAD_TO.get(model_obj.model_type)
 
 
 @api_view(['GET'])
@@ -61,6 +50,7 @@ def predict_single(request):
     data = serializer.validated_data
 
     model_obj = MLModel.objects.get(id=data['model_id'])
+    inference_config = resolve_inference_config(model_obj)
 
     try:
         result = run_predict(
@@ -68,7 +58,8 @@ def predict_single(request):
             data['coformer_smiles'],
             model_path=model_obj.model_file.path,
             num_classes=model_obj.num_classes,
-            pad_to=_legacy_builtin_pad_to(model_obj),
+            pad_to=inference_config['pad_to'],
+            model_size=inference_config['model_size'],
         )
     except (ValueError, TypeError, RuntimeError) as e:
         return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -100,6 +91,7 @@ def predict_batch(request):
     data = serializer.validated_data
 
     model_obj = MLModel.objects.get(id=data['model_id'])
+    inference_config = resolve_inference_config(model_obj)
     task = PredictionTask.objects.create(
         user=request.user,
         model=model_obj,
@@ -111,7 +103,8 @@ def predict_batch(request):
         task.id,
         model_obj.model_file.path,
         model_obj.num_classes,
-        _legacy_builtin_pad_to(model_obj),
+        inference_config['pad_to'],
+        inference_config['model_size'],
     )
     task.celery_task_id = celery_result.id
     task.save(update_fields=['celery_task_id'])
